@@ -29,6 +29,10 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   refreshTokens RefreshToken[]
+  organization  Organization?  @relation(fields: [organizationId], references: [id])
+  organizationId String?
+
+  @@index([organizationId])
 }
 
 model RefreshToken {
@@ -41,4 +45,41 @@ model RefreshToken {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+model Organization {
+  id        String     @id @default(uuid())
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  users     User[]
+  employees Employee[]
+}
+
+model Employee {
+  id             String        @id @default(uuid())
+  firstName      String
+  lastName       String
+  birthDate      DateTime
+  position       String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  organizationId String
+  images         RetinaImage[]
+
+  @@index([organizationId])
+}
+
+model RetinaImage {
+  id          String    @id @default(uuid())
+  path        String
+  features    Float[]   // Storing array of numbers as Float[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  processedAt DateTime?
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+  employeeId  String
+
+  @@index([employeeId])
 }
