@@ -51,7 +51,6 @@ const Dashboard = () => {
       <div className="space-y-12">
         {/* Users table section */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">Users</h2>
           <div className="bg-white rounded-lg shadow-lg p-6">
             <UserTable />
           </div>
@@ -59,7 +58,6 @@ const Dashboard = () => {
         
         {/* Organizations table section */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">Organizations</h2>
           <div className="bg-white rounded-lg shadow-lg p-6">
             <OrganizationsTable />
           </div>

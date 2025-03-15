@@ -3,17 +3,40 @@ import { useParams, useNavigate } from 'react-router-dom';
 import useUsersStore from '../store/useUsersStore';
 import { ArrowLeft, Edit, Trash, User as UserIcon } from 'lucide-react';
 import { paths } from '@/routes/paths';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { UserRole, UserUpdateDto } from '../types/types';
+import { toast } from 'sonner';
 
 export const UserDetails = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [formData, setFormData] = useState<UserUpdateDto>({});
+  
   const {
     selectedUser,
     isLoading,
     error,
     fetchUserById,
-    deleteUser
+    deleteUser,
+    updateUser
   } = useUsersStore();
 
   useEffect(() => {
@@ -22,12 +45,19 @@ export const UserDetails = () => {
     }
   }, [userId, fetchUserById]);
 
+  useEffect(() => {
+    if (selectedUser) {
+      setFormData({
+        firstName: selectedUser.firstName,
+        lastName: selectedUser.lastName,
+        email: selectedUser.email,
+        role: selectedUser.role
+      });
+    }
+  }, [selectedUser]);
+
   const handleBack = () => {
     navigate(paths.dashboard);
-  };
-
-  const handleEdit = () => {
-    setIsEditMode(true);
   };
 
   const handleDelete = async () => {
@@ -36,6 +66,19 @@ export const UserDetails = () => {
         await deleteUser(userId);
         navigate(paths.dashboard);
       }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId) return;
+
+    try {
+      await updateUser(userId, formData);
+      setIsSheetOpen(false);
+      toast.success('User updated successfully');
+    } catch (error) {
+      toast.error('Failed to update user');
     }
   };
 
@@ -100,16 +143,99 @@ export const UserDetails = () => {
           Back
         </button>
         <div className="flex space-x-2">
-          <button
-            onClick={handleEdit}
-            className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
-            aria-label="Edit user"
-            tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && handleEdit()}
-          >
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
-          </button>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <SheetTrigger asChild>
+              <Button
+                className="inline-flex items-center"
+                aria-label="Edit user"
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="sm:max-w-md p-6">
+              <SheetHeader>
+                <SheetTitle>Edit User</SheetTitle>
+                <SheetDescription className="text-muted-foreground">
+                  Make changes to user information here.
+                </SheetDescription>
+              </SheetHeader>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid gap-6 pt-4">
+                  <div className="grid grid-cols-4 items-center gap-3">
+                    <Label htmlFor="firstName" className="text-right text-sm font-medium">
+                      First Name
+                    </Label>
+                    <Input
+                      id="firstName"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      placeholder="Enter first name"
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-3">
+                    <Label htmlFor="lastName" className="text-right text-sm font-medium">
+                      Last Name
+                    </Label>
+                    <Input
+                      id="lastName"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      placeholder="Enter last name"
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-3">
+                    <Label htmlFor="email" className="text-right text-sm font-medium">
+                      Email
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="Enter email"
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-3">
+                    <Label htmlFor="role" className="text-right text-sm font-medium">
+                      Role
+                    </Label>
+                    <div className="col-span-3">
+                      <Select
+                        value={formData.role}
+                        onValueChange={(value: string) => setFormData({ ...formData, role: value as UserRole })}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={UserRole.SUPER_ADMIN}>Super Admin</SelectItem>
+                          <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
+                          <SelectItem value={UserRole.VALIDATOR}>Validator</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsSheetOpen(false)}
+                    className="px-3"
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="px-3">
+                    Save Changes
+                  </Button>
+                </div>
+              </form>
+            </SheetContent>
+          </Sheet>
           <button
             onClick={handleDelete}
             className="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
@@ -146,14 +272,15 @@ export const UserDetails = () => {
             <div>
               <dt className="text-sm font-medium text-gray-500">Role</dt>
               <dd className="mt-1">
-                <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${selectedUser.role === 'SUPER_ADMIN'
-                  ? 'bg-purple-100 text-purple-800'
-                  : selectedUser.role === 'ORG_ADMIN'
+                <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                  selectedUser.role === UserRole.SUPER_ADMIN
+                    ? 'bg-purple-100 text-purple-800'
+                    : selectedUser.role === UserRole.ADMIN
                     ? 'bg-blue-100 text-blue-800'
-                    : selectedUser.role === 'VALIDATOR'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
+                    : selectedUser.role === UserRole.VALIDATOR
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
                   {selectedUser.role}
                 </span>
               </dd>
