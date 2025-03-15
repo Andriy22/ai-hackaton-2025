@@ -8,11 +8,18 @@ import { AuthRepository } from './repositories/auth.repository';
 import { AuthService } from './services/auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
+import { CustomJwtStrategy } from './strategies/custom-jwt.strategy';
 
 @Module({
   imports: [PrismaModule, UsersModule, PassportModule, JwtModule.register({})],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, AuthRepository],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    RefreshTokenStrategy,
+    CustomJwtStrategy,
+    AuthRepository,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

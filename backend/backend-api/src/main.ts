@@ -45,7 +45,7 @@ async function bootstrap(): Promise<void> {
       title: 'User Management API',
       description: 'API for managing users in the system',
       logo: 'https://scalar.com/assets/images/scalar-logo.svg',
-      theme: 'default',
+      theme: 'deepSpace',
       spec: {
         content: document,
       },
