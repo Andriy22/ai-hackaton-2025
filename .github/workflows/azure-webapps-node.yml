@@ -31,11 +31,10 @@ jobs:
         npm run test --if-present
 
     - name: Upload artifact for deployment job
-      working-directory: ./backend/backend-api
       uses: actions/upload-artifact@v4
       with:
         name: node-app
-        path: .  # Uploads everything in the Nest app directory
+        path: ./backend/backend-api
 
   deploy:
     permissions:
