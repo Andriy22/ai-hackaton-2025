@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import {
@@ -66,7 +65,7 @@ export class CreateUserDto {
   @ApiProperty({
     description: "User's role (ADMIN or USER)",
     enum: UserRole,
-    default: UserRole.USER,
+    default: UserRole.ORG_ADMIN,
     required: false,
   })
   @IsOptional()

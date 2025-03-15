@@ -16,7 +16,7 @@ async function main() {
       lastName: 'User',
       email: 'admin@example.com',
       password: hashedPassword, // Now properly hashed
-      role: UserRole.ADMIN,
+      role: UserRole.SUPER_ADMIN,
     },
   });
 

@@ -46,7 +46,7 @@ export class UsersService {
     const user = await this.usersRepository.create({
       ...createUserDto,
       password: hashedPassword,
-      role: createUserDto.role || UserRole.USER,
+      role: createUserDto.role || UserRole.ORG_ADMIN,
     });
 
     // Remove password from response
