@@ -1,4 +1,4 @@
-import { CreateOrganizationDto, OrganizationResponse, OrganizationsResponse, UpdateOrganizationDto } from './types/organization';
+import { CreateOrganizationDto, OrganizationResponse, OrganizationsResponse, UpdateOrganizationDto } from '../types/types';
 import { api } from '@/features/auth/api/apiInterceptor';
 
 export const organizationApi = {

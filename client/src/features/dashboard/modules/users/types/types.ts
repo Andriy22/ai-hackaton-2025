@@ -45,11 +45,9 @@ export interface PaginationMeta {
 }
 
 export interface PaginatedResponse<T> {
-  users: User[];
+  users: T[];
   meta: PaginationMeta;
 }
-
-export type UsersResponse = PaginatedResponse<User>;
 
 export interface UserResponse {
   user: User;

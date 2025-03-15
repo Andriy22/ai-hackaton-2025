@@ -1,4 +1,4 @@
-import { User, PaginatedResponse, UserCreateDto, UserUpdateDto, PaginationParams } from './types';
+import { User, PaginatedResponse, UserCreateDto, UserUpdateDto, PaginationParams } from '../types/types';
 import { api } from '@/features/auth/api/apiInterceptor';
 
 /**

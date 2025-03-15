@@ -6,7 +6,7 @@ import Login from './pages/auth/Login';
 import Dashboard from './pages/Dashboard';
 import Account from './pages/Account';
 import { NotFound } from './pages/NotFound';
-import { UserDetails } from './features/dashboard/components/UserDetails';
+import { UserDetails } from './features/dashboard/modules/users/components/UserDetails';
 import Organizations from './pages/Organizations';
 import { paths } from './routes/paths';
 import ErrorBoundary from './components/ErrorBoundary';

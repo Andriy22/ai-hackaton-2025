@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { User, UserRole } from '../api/types';
-import useDashboardStore from '../store/useDashboardStore';
+import { User, UserRole } from '../types/types';
+import useUsersStore from '../store/useUsersStore';
 import { X } from 'lucide-react';
 
 interface UserFormProps {
@@ -19,7 +19,7 @@ interface UserFormData {
 }
 
 export const UserForm = ({ user, isOpen, onClose, isEditMode }: UserFormProps) => {
-  const { createUser, updateUser, isLoading, error, clearError } = useDashboardStore();
+  const { createUser, updateUser, isLoading, error, clearError } = useUsersStore();
   
   const initialFormData: UserFormData = {
     firstName: user?.firstName || '',

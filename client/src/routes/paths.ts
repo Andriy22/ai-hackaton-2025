@@ -1,8 +1,7 @@
 export const paths = {
   home: '/',
   auth: {
-    login: '/auth/login',
-    register: '/auth/register',
+    login: '/auth/login'
   },
   dashboard: '/dashboard',
   users: {

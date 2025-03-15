@@ -141,9 +141,6 @@ export function Dropzone({ onUpload, className }: DropzoneProps) {
             </div>
             
             <div className="space-y-2">
-              {/* {uploading && (
-                <Progress value={uploadProgress} className="h-2" />
-              )} */}
               <Button
                 className="w-full"
                 onClick={handleUpload}

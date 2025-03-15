@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { AuthInput } from './AuthInput';
 import type { LoginCredentials } from '../api/types';
@@ -28,15 +27,6 @@ export const LoginForm = () => {
           <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
             Sign in
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link
-              to="/auth/register"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              create a new account
-            </Link>
-          </p>
         </div>
 
         {error && (
@@ -57,7 +47,7 @@ export const LoginForm = () => {
               required
               autoComplete="email"
             />
-            
+
             <AuthInput
               id="password"
               name="password"
@@ -82,19 +72,13 @@ export const LoginForm = () => {
                 Remember me
               </label>
             </div>
-
-            <div className="text-sm">
-              <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Forgot your password?
-              </a>
-            </div>
           </div>
 
           <div>
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              className="group relative flex w-full justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
             </button>

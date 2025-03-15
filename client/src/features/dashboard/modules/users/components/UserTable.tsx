@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserRole } from '../api/types';
-import useDashboardStore from '../store/useDashboardStore';
+import { UserRole } from '../types/types';
+import useUsersStore from '../store/useUsersStore';
 import { 
   ChevronLeft, 
   ChevronRight, 
   Trash, 
   Edit, 
   Eye, 
-  Search,
-  UserPlus,
-  Filter
+  Filter,
+  UserPlus
 } from 'lucide-react';
 import { paths } from '@/routes/paths';
 import { UserForm } from './UserForm';
@@ -24,7 +23,6 @@ export const UserTable = () => {
     limit = 10,
     totalPages = 0,
     role,
-    search = '',
     isLoading = false, 
     error = null,
     fetchUsers, 
@@ -32,12 +30,10 @@ export const UserTable = () => {
     setPage,
     setLimit,
     setRole,
-    setSearch,
     fetchUserById,
     selectedUser
-  } = useDashboardStore() || {}; 
+  } = useUsersStore() || {}; 
 
-  const [searchTerm, setSearchTerm] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
@@ -54,22 +50,6 @@ export const UserTable = () => {
       fetchUserById(editUserId);
     }
   }, [editUserId, fetchUserById]);
-
-  useEffect(() => {
-    if (!setSearch) return;
-    
-    const timer = setTimeout(() => {
-      if (searchTerm !== search) {
-        setSearch(searchTerm);
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm, setSearch, search]);
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
 
   const handleRoleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (!setRole) return;
@@ -147,25 +127,11 @@ export const UserTable = () => {
   };
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-md">
+    <div>
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <h2 className="text-xl font-bold text-gray-800">Users</h2>
         
         <div className="flex flex-col gap-3 sm:flex-row">
-          <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <Search className="h-4 w-4 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={handleSearch}
-              className="w-full rounded-md border border-gray-300 pl-10 pr-4 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:w-64"
-              aria-label="Search users"
-            />
-          </div>
-          
           <div className="relative">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <Filter className="h-4 w-4 text-gray-400" />
@@ -213,7 +179,7 @@ export const UserTable = () => {
         <div className="flex h-64 flex-col items-center justify-center">
           <p className="mb-4 text-lg font-medium text-gray-600">No users found</p>
           <p className="text-sm text-gray-500">
-            {search ? 'Try a different search term or clear the search.' : 'Create a new user to get started.'}
+            Create a new user to get started.
           </p>
         </div>
       ) : (

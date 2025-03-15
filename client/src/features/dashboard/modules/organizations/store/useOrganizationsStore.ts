@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Organization } from '../api/types/organization';
+import { Organization } from '../types/types';
 import { organizationApi } from '../api/organizationApi';
 
 interface OrganizationsState {

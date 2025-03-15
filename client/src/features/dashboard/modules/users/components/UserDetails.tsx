@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import useDashboardStore from '../store/useDashboardStore';
+import useUsersStore from '../store/useUsersStore';
 import { ArrowLeft, Edit, Trash, User as UserIcon } from 'lucide-react';
 import { paths } from '@/routes/paths';
-import { Dropzone } from '@/components/features/Dropzone';
 
 export const UserDetails = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -15,7 +14,7 @@ export const UserDetails = () => {
     error,
     fetchUserById,
     deleteUser
-  } = useDashboardStore();
+  } = useUsersStore();
 
   useEffect(() => {
     if (userId) {
@@ -174,13 +173,6 @@ export const UserDetails = () => {
           </dl>
         </div>
       </div>
-
-      <Dropzone className="mt-8" onUpload={async (files: File[]) => {
-        // Handle file upload logic here
-        console.log('Files uploaded:', files);
-        // Return a promise
-        return Promise.resolve();
-      }} />
     </div>
   );
 };

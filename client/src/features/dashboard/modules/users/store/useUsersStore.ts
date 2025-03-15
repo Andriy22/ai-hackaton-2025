@@ -5,7 +5,7 @@ import {
   PaginationParams,
   UserCreateDto,
   UserUpdateDto
-} from '../api/types';
+} from '../types/types';
 import { 
   getUsers, 
   getUserById, 
@@ -14,7 +14,7 @@ import {
   deleteUser 
 } from '../api/userApi';
 
-interface DashboardState {
+interface UsersState {
   // Users state
   users: User[];
   selectedUser: User | null;
@@ -45,7 +45,7 @@ interface DashboardState {
   clearError: () => void;
 }
 
-const useDashboardStore = create<DashboardState>((set, get) => ({
+const useUsersStore = create<UsersState>((set, get) => ({
   // Initial state
   users: [],
   selectedUser: null,
@@ -84,7 +84,6 @@ const useDashboardStore = create<DashboardState>((set, get) => ({
       }
       
       const response = await getUsers(queryParams);
-      console.log(response);
       set({
         users: response.users,
         total: response.meta.total,
@@ -209,4 +208,4 @@ const useDashboardStore = create<DashboardState>((set, get) => ({
   clearError: () => set({ error: null }),
 }));
 
-export default useDashboardStore;
+export default useUsersStore;

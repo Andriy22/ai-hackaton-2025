@@ -1,4 +1,4 @@
-import { OrganizationsTable } from "@/features/dashboard/components/OrganizationsTable";
+import { OrganizationsTable } from "@/features/dashboard/modules/organizations/components/OrganizationsTable";
 
 const Organizations = () => {
   return (

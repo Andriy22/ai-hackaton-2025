@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import useDashboardStore from '../store/useDashboardStore';
+import useDashboardStore from '../../../store/useDashboardStore';
 import { UserForm } from './UserForm';
 import { ArrowLeft } from 'lucide-react';
 import { paths } from '@/routes/paths';

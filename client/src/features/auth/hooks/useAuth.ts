@@ -1,13 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore';
-import type { LoginCredentials, RegisterCredentials } from '../api/types';
+import type { LoginCredentials } from '../api/types';
 
 interface UseAuthReturn {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
   login: (credentials: LoginCredentials) => Promise<void>;
-  register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => void;
 }
 
@@ -30,12 +29,6 @@ export const useAuth = (): UseAuthReturn => {
     }
   };
 
-  const register = async (_credentials: RegisterCredentials) => {
-    // We'll implement this later when we have a register endpoint
-    // For now, just navigate to login
-    navigate('/auth/login');
-  };
-
   const logout = () => {
     storeLogout();
     navigate('/auth/login');
@@ -46,7 +39,6 @@ export const useAuth = (): UseAuthReturn => {
     isAuthenticated,
     error,
     login,
-    register,
     logout,
   };
 };
