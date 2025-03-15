@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import {
   IsEmail,
@@ -8,7 +9,6 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
 
 /**
  * Data Transfer Object for creating a new user

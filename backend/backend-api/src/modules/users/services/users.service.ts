@@ -118,17 +118,15 @@ export class UsersService {
   /**
    * Find a user by email
    * @param email - User email
-   * @returns The user without password
    * @throws NotFoundException if user not found
    */
-  async findUserByEmail(email: string): Promise<Omit<User, 'password'>> {
+  async findUserByEmail(email: string): Promise<User> {
     const user = await this.usersRepository.findByEmail(email);
     if (!user) {
       throw new NotFoundException(`User with email ${email} not found`);
     }
 
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return user;
   }
 
   /**

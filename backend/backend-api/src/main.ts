@@ -4,6 +4,11 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module';
 
+console.log('Environment variables loaded:');
+console.log(`- JWT_ACCESS_SECRET: ${process.env.JWT_ACCESS_SECRET}`);
+console.log(`- JWT_REFRESH_SECRET: ${process.env.JWT_REFRESH_SECRET}`);
+console.log(`- PORT: ${process.env.PORT || '3000 (default)'}`);
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
@@ -47,11 +52,13 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
   console.log(`Application is running on: ${await app.getUrl()}`);
   console.log(`API Documentation available at: ${await app.getUrl()}/api`);
   console.log(`Scalar API Reference available at: ${await app.getUrl()}/docs`);
 }
+
 bootstrap()
   .then()
   .catch((e) => console.error(e));
