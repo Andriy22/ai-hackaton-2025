@@ -8,13 +8,13 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '22.x'  # You were missing this env var
+  NODE_VERSION: '22.x'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
     steps:
       - uses: actions/checkout@v4
       
@@ -32,32 +32,52 @@ jobs:
           npm run build --if-present
           npm run test --if-present
       
-      - name: Prepare production files
-        working-directory: ./backend/backend-api
+      - name: Create production deployment package
         run: |
-          # Create a deployment directory
-          mkdir -p ../deployment
+          # Create a fresh deployment directory
+          mkdir -p deployment
           
-          # Copy only necessary files for production
-          cp package.json ../deployment/
-          cp package-lock.json ../deployment/
-          cp -r dist ../deployment/
+          # Copy only production files
+          cp -r backend/backend-api/dist deployment/
+          cp backend/backend-api/package.json deployment/
+          cp backend/backend-api/package-lock.json deployment/
           
-          # Create a minimal production package.json if needed
-          # Uncomment and adjust if you want to use this approach
-          # node -e "const pkg=require('./package.json'); const newPkg={name:pkg.name,version:pkg.version,dependencies:pkg.dependencies,scripts:{start:pkg.scripts.start}}; fs.writeFileSync('../deployment/package.json', JSON.stringify(newPkg, null, 2));"
+          # Install production dependencies directly in deployment folder
+          cd deployment
+          npm ci --only=production
           
-          # Optional: Include other necessary files
-          # cp -r config ../deployment/ # If you have config files
-          # cp .env.example ../deployment/ # If you have env file examples
-
-      - name: Install production dependencies
-        working-directory: ./backend/deployment
-        run: npm ci --only=production
+          # Create a minimal web.config file if needed for Azure
+          echo '<?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <system.webServer>
+              <handlers>
+                <add name="iisnode" path="dist/main.js" verb="*" modules="iisnode" />
+              </handlers>
+              <rewrite>
+                <rules>
+                  <rule name="main">
+                    <match url="/*" />
+                    <action type="Rewrite" url="dist/main.js" />
+                  </rule>
+                </rules>
+              </rewrite>
+            </system.webServer>
+          </configuration>' > web.config
+          
+          # Debug: show what's in the deployment folder
+          echo "Files in deployment folder:"
+          ls -la
+          
+          # Return to root directory
+          cd ..
       
-      - name: Zip artifact for deployment
-        working-directory: ./backend
-        run: zip -r ../release.zip ./deployment
+      - name: Zip deployment package
+        run: |
+          cd deployment
+          zip -r ../release.zip .
+          cd ..
+          # Debug: show zip file size
+          ls -lh release.zip
       
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -72,8 +92,8 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
@@ -81,7 +101,10 @@ jobs:
           name: node-app
       
       - name: Unzip artifact for deployment
-        run: unzip release.zip
+        run: |
+          unzip release.zip -d deployment
+          echo "Files to be deployed:"
+          ls -la deployment
       
       - name: Login to Azure
         uses: azure/login@v2
