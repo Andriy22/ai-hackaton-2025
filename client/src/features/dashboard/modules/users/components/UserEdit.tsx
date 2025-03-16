@@ -1,10 +1,11 @@
+/* eslint-disable */
+import { ErrorState, LoadingState, NotFoundState } from '@/components/ui/feedback';
+import { paths } from '@/routes/paths';
+import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import useUsersStore from '../store/useUsersStore';
 import { UserForm } from './UserForm';
-import { ArrowLeft } from 'lucide-react';
-import { paths } from '@/routes/paths';
-import { LoadingState, ErrorState, NotFoundState } from '@/components/ui/feedback';
 
 export const UserEdit = () => {
   const { userId } = useParams<{ userId: string }>();

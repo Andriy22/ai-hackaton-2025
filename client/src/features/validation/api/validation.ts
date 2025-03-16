@@ -1,5 +1,5 @@
-import { ValidationResult, Employee, ValidationStatistics } from "./types";
 import { api } from '@/features/auth/api/apiInterceptor';
+import { Employee, ValidationResult, ValidationStatistics } from "./types";
 
 export const validationApi = {
   /**
@@ -92,4 +92,5 @@ export const validationApi = {
 };
 
 // Re-export types to maintain backward compatibility
-export type { ValidationResult, Employee, ValidationStatistics, DailyStatItem } from "./types";
+export type { DailyStatItem, Employee, ValidationResult, ValidationStatistics } from "./types";
+

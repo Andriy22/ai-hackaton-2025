@@ -1,10 +1,10 @@
-import React from 'react';
-import useAuthStore from '@/features/auth/store/useAuthStore';
-import { Shield, Mail, Calendar, User, Key, Clock, Building, RefreshCw, BarChart4, UserRound, Briefcase, MapPin, Phone } from 'lucide-react';
-import { getReadableUserRole } from '@/lib/utils';
-import { UserRole } from '@/features/dashboard/modules/users/types/types';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import useAuthStore from '@/features/auth/store/useAuthStore';
+import { UserRole } from '@/features/dashboard/modules/users/types/types';
+import { getReadableUserRole } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import { Building, Calendar, Clock, Key, Mail, RefreshCw, Shield, User } from 'lucide-react';
+import React from 'react';
 
 const Account: React.FC = () => {
   const { user } = useAuthStore();

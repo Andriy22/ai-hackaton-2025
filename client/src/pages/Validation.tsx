@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
 import useAuthStore from '@/features/auth/store/useAuthStore';
 import useValidationStore from '@/features/validation/store/useValidationStore';
-import { motion, AnimatePresence } from 'framer-motion';
-import { EyeIcon, ShieldCheckIcon, CheckCircleIcon, UploadCloudIcon } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircleIcon, EyeIcon, ShieldCheckIcon, UploadCloudIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 // Import components
-import ValidationDropzone from '@/features/validation/components/ValidationDropzone';
-import ValidationResultComponent from '@/features/validation/components/ValidationResult';
 import EmployeeDetails from '@/features/validation/components/EmployeeDetails';
 import OrganizationRequired from '@/features/validation/components/OrganizationRequired';
+import ValidationDropzone from '@/features/validation/components/ValidationDropzone';
+import ValidationResultComponent from '@/features/validation/components/ValidationResult';
 import ValidationStatus, { ValidationStatusType } from '@/features/validation/components/ValidationStatus';
 
 const ValidationPage: React.FC = () => {
