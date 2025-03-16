@@ -1,15 +1,15 @@
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
+import {
+  ServiceBusClient,
+  ServiceBusReceivedMessage,
+  ServiceBusReceiver,
+} from '@azure/service-bus';
 import {
   Injectable,
   Logger,
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
-import {
-  ServiceBusClient,
-  ServiceBusMessage,
-  ServiceBusReceiver,
-  ServiceBusReceivedMessage,
-} from '@azure/service-bus';
 import { RetinaImageRepository } from '../repositories/retina-image.repository';
 
 /**
