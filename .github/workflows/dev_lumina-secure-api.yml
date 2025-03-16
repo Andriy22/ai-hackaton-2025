@@ -4,7 +4,7 @@ name: Build and deploy Node.js app to Azure Web App - lumina-secure
 on:
   push:
     branches:
-      - master
+      - dev
   workflow_dispatch:
 
 env:
