@@ -37,14 +37,10 @@ jobs:
           # Create a fresh deployment directory
           mkdir -p deployment
           
-          # Copy only production files
+          # Copy only production files (build output and package definitions)
           cp -r backend/backend-api/dist deployment/
           cp backend/backend-api/package.json deployment/
           cp backend/backend-api/package-lock.json deployment/
-          
-          # Install production dependencies directly in deployment folder
-          cd deployment
-          npm ci --only=production
           
           # Create a minimal web.config file if needed for Azure
           echo '<?xml version="1.0" encoding="utf-8"?>
@@ -62,19 +58,17 @@ jobs:
                 </rules>
               </rewrite>
             </system.webServer>
-          </configuration>' > web.config
+          </configuration>' > deployment/web.config
           
           # Debug: show what's in the deployment folder
           echo "Files in deployment folder:"
-          ls -la
+          ls -la deployment
           
-          # Return to root directory
-          cd ..
-      
       - name: Zip deployment package
         run: |
           cd deployment
-          zip -r ../release.zip .
+          # Zip everything but exclude any node_modules folder (if present)
+          zip -r ../release.zip . -x "node_modules/*"
           cd ..
           # Debug: show zip file size
           ls -lh release.zip
