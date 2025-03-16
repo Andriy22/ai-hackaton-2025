@@ -1,148 +1,249 @@
-# Retina Image Analysis Service
+# 👁️ Lumina-Secure: Enterprise Retina Management System
 
-A Python service for processing retina images, extracting biometric features, and comparing them to determine if two retina images belong to the same person.
+![Lumina-Secure](https://img.shields.io/badge/Lumina--Secure-1.0.0-brightgreen)
+![Python](https://img.shields.io/badge/Python-3.10-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.103.1-blue)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue)
+![Azure](https://img.shields.io/badge/Azure-Integrated-0078D4)
 
-## Features
+A comprehensive solution for managing organization's retina scans with advanced biometric processing capabilities. Lumina-Secure provides secure, efficient, and reliable retina authentication for enterprise security needs.
 
-- Retina image preprocessing
-- Feature extraction from retina images:
-  - Blood vessel extraction
-  - Optic disc detection
-  - Local Binary Pattern (LBP) feature extraction
-  - Histogram of Oriented Gradients (HOG) feature extraction
-  - Bifurcation point detection
-  - Spatial distribution analysis of blood vessels
-- Comparison of retina features for biometric identification
-- Export and import of processed features to JSON files
-- Azure Service Bus integration for message-based processing
-- Azure Blob Storage integration for storing retina images
+## ✨ Features
 
-## Installation
+- 🔍 Advanced retina image preprocessing and analysis
+- 🔐 Secure biometric authentication using retina patterns
+- 🌐 FastAPI-powered RESTful API for integration
+- 📊 Feature extraction from retina images:
+  - 🩸 Blood vessel extraction and pattern recognition
+  - 🔄 Optic disc detection
+  - 🧬 Local Binary Pattern (LBP) feature extraction
+  - 📈 Histogram of Oriented Gradients (HOG) feature extraction
+  - 🔀 Bifurcation point detection
+  - 📱 Spatial distribution analysis of blood vessels
+- ☁️ Azure cloud integration:
+  - 💾 Azure Blob Storage for image management
+  - 📨 Azure Service Bus for message-based processing
+  - 🗄️ Azure Cosmos DB for feature storage
+- 🐳 Docker containerization for easy deployment
+- 🔄 Real-time validation against employee database
 
-1. Install the required dependencies:
+## 🚀 Quick Start
 
-```bash
-pip install -r requirements.txt
-```
+### Prerequisites
 
-2. Configure the `.env` file with your Azure credentials:
+- [Docker](https://www.docker.com/get-started) and Docker Compose
+- Azure subscription (for cloud features)
+- Python 3.10+ (for local development)
 
-```
-# Azure Service Bus Configuration
-SERVICE_BUS_CONNECTION_STRING=your-service-bus-connection-string
-SERVICE_BUS_QUEUE_NAME=retina-analysis-queue
+### Using Docker (Recommended)
 
-# Azure Blob Storage Configuration
-BLOB_CONNECTION_STRING=your-blob-connection-string
-BLOB_CONTAINER_NAME=retina-images
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-organization/lumina-secure.git
+   cd lumina-secure
+   ```
 
-## API Endpoints
+2. Configure environment variables in `.env` file:
+   ```
+   # Azure Blob Storage Configuration
+   BLOB_CONNECTION_STRING=your-blob-connection-string
+   BLOB_CONTAINER_NAME=retina-images
 
-- `POST /upload`: Upload a retina image for processing
-- `POST /compare`: Compare two retina images to determine if they belong to the same person
-- `POST /analyze`: Analyze a retina image and return visualization of the processing steps
-- `POST /export`: Export retina features to a JSON file
-- `POST /import`: Import retina features from a JSON file
-- `GET /download/{filename}`: Download a previously exported JSON file
-- `GET /list-exports`: List all exported retina feature files
+   # Azure Service Bus Configuration
+   SERVICE_BUS_CONNECTION_STRING=your-service-bus-connection-string
+   SERVICE_BUS_QUEUE_NAME=retina-analysis-queue
+   AZURE_SERVICE_BUS_RESPONSE_QUEUE_NAME=response-queue
+   AZURE_SERVICE_BUS_VALIDATION_RESPONSE_QUEUE_NAME=validation-response
+   AZURE_SERVICE_BUS_VALIDATION_QUEUE_NAME=validation-queue
 
-## How It Works
+   # Azure Cosmos DB Configuration
+   COSMOS_ENDPOINT=your-cosmos-endpoint
+   COSMOS_KEY=your-cosmos-key
+   COSMOS_DATABASE=your-cosmos-database
+   COSMOS_CONTAINER=your-cosmos-container
+   ```
 
-The service uses computer vision techniques to:
-1. Preprocess retina images (normalization, enhancement)
-2. Extract key features:
-   - Blood vessel patterns
-   - Optic disc location
-   - Bifurcation points (branching points in blood vessels)
-   - Spatial distribution of blood vessels using a grid-based approach
-3. Generate feature vectors for comparison
-4. Compare feature vectors to determine similarity, considering:
-   - Texture similarity (LBP, HOG)
-   - Blood vessel density similarity
-   - Bifurcation point matching
-   - Spatial distribution similarity of blood vessels
+3. Start the application with Docker Compose:
+   ```bash
+   docker-compose up -d
+   ```
 
-## Export/Import Functionality
+4. Access the API at http://localhost:8000
 
-The service allows exporting processed retina features to JSON files, which can be used for future comparisons without reprocessing the original images. This is useful for:
+### Local Development
 
-- Creating a database of retina features for quick comparison
-- Transferring retina features between systems
-- Backing up processed data
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-JSON files include:
-- Extracted features (LBP, HOG, bifurcation points, etc.)
-- Base64-encoded preprocessed images
-- Metadata (person ID, timestamp, etc.)
+2. Configure the `.env` file as shown above
 
-## Client Demo
+3. Start the FastAPI server:
+   ```bash
+   uvicorn app:app --host 0.0.0.0 --port 8000
+   ```
 
-A client demo script (`client_demo.py`) is provided to demonstrate how to use the retina image processing service. It supports the following operations:
+4. Start the Service Bus processor in a separate terminal:
+   ```bash
+   python main.py
+   ```
 
-```bash
-# Upload a retina image
-python client_demo.py --action upload --image path/to/retina.jpg
+## 🔌 API Endpoints
 
-# Compare two retina images
-python client_demo.py --action compare --image1 path/to/retina1.jpg --image2 path/to/retina2.jpg
+- `GET /`: Health check endpoint
+- `POST /validate`: Validate a retina image against employee database
 
-# Compare using image IDs from previous uploads
-python client_demo.py --action compare --image1_id ID1 --image2_id ID2
-
-# Export features to JSON
-python client_demo.py --action export --image_id ID --filename output.json --person_id "Person123"
-
-# Import features from JSON
-python client_demo.py --action import --json_file path/to/features.json
-
-# List all exported JSON files
-python client_demo.py --action list
-
-# Analyze a retina image and display visualizations
-python client_demo.py --action analyze --image path/to/retina.jpg
-
-# Send retina scan request to Service Bus
-python client_demo.py --action send-to-service-bus --image path/to/retina.jpg --employee-id employee123
-```
-
-## Azure Blob Storage Integration
-
-The service uses Azure Blob Storage to store retina images. The `blob_storage.py` script handles the upload and download of images to and from Blob Storage.
-
-## Technologies Used
-
-- Python
-- OpenCV for image processing
-- NumPy for numerical operations
-- scikit-image for feature extraction
-- SciPy for spatial distance calculations
-- FastAPI for the web service
-- JSON for data export/import
-- Azure Service Bus for message-based processing
-- Azure Blob Storage for storing retina images
-
-## Service Bus Integration
-
-The service uses Azure Service Bus for message-based processing. The `service_processor.py` script listens to the Service Bus queue for retina scan requests and processes them accordingly.
-
-## Message Format
-
-The Service Bus messages should be in JSON format with the following structure:
+### Validation Request Example
 
 ```json
 {
-  "image_path": "/absolute/path/to/image.jpg",
-  "employeeId": "employee123"
+  "image_path": "path/to/retina/image.jpg",
+  "employees": [
+    {
+      "employeeId": "emp123",
+      "documentId": "doc456"
+    }
+  ],
+  "messageId": "msg789",
+  "originatingInstance": "instance1"
 }
 ```
 
-## Development
+## 🏗️ Architecture
 
-### Project Structure
+Lumina-Secure uses a microservices architecture with the following components:
 
-- `service_processor.py`: Main service that processes messages from Service Bus
-- `retina_processor.py`: Core functionality for retina image processing
-- `service_bus.py`: Azure Service Bus integration
-- `blob_storage.py`: Azure Blob Storage integration
-- `client_demo.py`: Client for sending requests to Service Bus
+1. **FastAPI Web Service**: Handles HTTP requests for retina validation
+2. **Service Bus Processor**: Processes asynchronous retina validation requests
+3. **Retina Processor**: Core engine for retina image analysis and feature extraction
+4. **Storage Services**:
+   - Azure Blob Storage for retina images
+   - Azure Cosmos DB for feature storage
+
+## 🧰 Technologies Used
+
+- **Backend**:
+  - Python 3.10
+  - FastAPI & Uvicorn
+  - OpenCV for image processing
+  - NumPy & SciPy for numerical operations
+  - scikit-image & scikit-learn for feature extraction and machine learning
+
+- **Cloud Services**:
+  - Azure Blob Storage
+  - Azure Service Bus
+  - Azure Cosmos DB
+
+- **Deployment**:
+  - Docker & Docker Compose
+  - Supervisord for process management
+
+## 🔒 Security Features
+
+- Secure biometric validation
+- Encrypted data storage
+- Token-based authentication
+- Comprehensive logging and auditing
+
+## 📦 Project Structure
+
+```
+lumina-secure/
+├── app.py                  # FastAPI application
+├── main.py                 # Service Bus processor
+├── retina_processor.py     # Core retina processing logic
+├── blob_storage.py         # Azure Blob Storage integration
+├── cosmos_db.py            # Azure Cosmos DB integration
+├── service_bus.py          # Azure Service Bus integration
+├── service_processor.py    # Message processing logic
+├── requirements.txt        # Python dependencies
+├── Dockerfile              # Docker configuration
+├── docker-compose.yml      # Docker Compose configuration
+├── supervisord.conf        # Supervisor configuration
+└── retina_data/            # Local data directory
+```
+
+## 🔬 Retina Comparison Algorithm
+
+The Lumina-Secure system uses a sophisticated multi-stage algorithm to compare retina scans:
+
+### 1. Image Preprocessing
+
+Before any feature extraction or comparison can take place, the retina images undergo several preprocessing steps:
+
+- **Resizing**: Images are standardized to 256×256 pixels for consistent processing
+- **Grayscale Conversion**: Color images are converted to grayscale
+- **Contrast Enhancement**: CLAHE (Contrast Limited Adaptive Histogram Equalization) is applied to enhance blood vessel visibility
+- **Noise Reduction**: Gaussian blur is applied to reduce image noise
+
+### 2. Feature Extraction
+
+The system extracts multiple types of features from each retina image:
+
+#### 2.1. Blood Vessel Extraction
+- **Adaptive Thresholding**: Identifies blood vessels using Gaussian adaptive thresholding
+- **Morphological Operations**: Opening operations enhance and clean up the blood vessel network
+- **Skeletonization**: Creates a single-pixel-wide skeleton of the blood vessel network for further analysis
+
+#### 2.2. Optic Disc Detection
+- **Hough Circle Transform**: Detects the circular optic disc in the retina
+- **Parameters**: The algorithm looks for circles with radius between 10-50 pixels
+
+#### 2.3. Texture Analysis
+- **Local Binary Pattern (LBP)**: Captures local texture patterns with 8 sampling points at radius 1
+- **Histogram of Oriented Gradients (HOG)**: Analyzes gradient directions with 6 orientations and 32×32 pixel cells
+
+#### 2.4. Blood Vessel Metrics
+- **Vessel Density**: Percentage of the image covered by blood vessels
+- **Average Vessel Length**: Mean length of detected blood vessel segments
+- **Average Vessel Width**: Mean width of detected blood vessel segments
+- **Vessel Count**: Total number of distinct blood vessel segments
+
+#### 2.5. Bifurcation Point Detection
+- **Junction Detection**: Uses a specialized kernel to identify points where blood vessels branch
+- **Filtering**: Identifies points with at least 3 connecting branches
+- **Peak Detection**: Uses local maxima detection to find the most significant bifurcation points (limited to 50 points for efficiency)
+
+#### 2.6. Spatial Distribution Analysis
+- **Grid-based Approach**: Divides the image into an 8×8 grid
+- **Density Calculation**: Computes blood vessel density in each grid cell
+- **Feature Vector**: Creates a 64-element vector representing the spatial distribution of vessels
+
+### 3. Feature Comparison
+
+When comparing two retina scans, the system performs a multi-faceted analysis:
+
+#### 3.1. Texture Similarity
+- **LBP Histogram Comparison**: Cosine similarity between LBP histograms
+- **HOG Feature Comparison**: Cosine similarity between HOG feature vectors
+
+#### 3.2. Vessel Pattern Similarity
+- **Density Comparison**: Normalized difference between vessel densities
+- **Length Comparison**: Normalized difference between average vessel lengths
+- **Width Comparison**: Normalized difference between average vessel widths
+
+#### 3.3. Bifurcation Point Matching
+- **Distance Calculation**: Euclidean distances between all pairs of bifurcation points
+- **Greedy Matching**: Points within a threshold distance (10 pixels) are considered matches
+- **Similarity Score**: Ratio of matched points to the maximum number of points
+
+#### 3.4. Spatial Distribution Similarity
+- **Grid Comparison**: Cosine similarity between the vessel spatial distribution vectors
+
+### 4. Weighted Similarity Calculation
+
+The final similarity score is a weighted average of all individual similarity measures:
+
+- **LBP Similarity**: 20% weight
+- **HOG Similarity**: 20% weight
+- **Vessel Density Similarity**: 10% weight
+- **Vessel Length Similarity**: 10% weight
+- **Vessel Width Similarity**: 5% weight
+- **Bifurcation Point Similarity**: 20% weight
+- **Vessel Spatial Similarity**: 15% weight
+
+### 5. Match Determination
+
+- The system considers two retinas to match if the overall similarity score exceeds 0.95 (95%)
+- This threshold can be adjusted based on security requirements (higher for more strict matching)
