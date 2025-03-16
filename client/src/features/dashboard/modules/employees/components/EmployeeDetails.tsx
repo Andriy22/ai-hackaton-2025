@@ -1,7 +1,9 @@
-import { Button } from '@/components/ui/button';
-import { Confirm } from '@/components/ui/confirm';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import useEmployeesStore from '../store/useEmployeesStore';
+import { ArrowLeft, Edit, Trash, Briefcase, Calendar, Clock, User, RefreshCw, UserCheck, FileText, Clipboard, Building } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { paths } from '@/routes/paths';
 import {
   Sheet,
   SheetContent,
@@ -10,17 +12,15 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from '@/lib/toast';
-import { formatDate } from '@/lib/utils';
-import { paths } from '@/routes/paths';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Briefcase, Building, Calendar, Clipboard, Clock, Edit, FileText, RefreshCw, Trash, User, UserCheck } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { UpdateEmployeeDto } from '../../organizations/types/types';
-import useEmployeesStore from '../store/useEmployeesStore';
+import { toast } from '@/lib/toast';
+import { Confirm } from '@/components/ui/confirm';
+import { formatDate } from '@/lib/utils';
 import { RetinaPhotos } from './RetinaPhotos';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const EmployeeDetails = () => {
   const { employeeId } = useParams<{ employeeId: string }>();

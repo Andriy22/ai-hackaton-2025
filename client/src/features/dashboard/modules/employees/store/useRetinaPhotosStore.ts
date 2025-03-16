@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { RetinaPhoto, employeeApi } from '../api/employeeApi';
-import { toast } from '@/lib/toast';
 
 interface RetinaPhotosState {
   photos: RetinaPhoto[];
