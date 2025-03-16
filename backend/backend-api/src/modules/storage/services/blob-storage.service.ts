@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { RetinaImageRepository } from '../repositories/retina-image.repository';
+import { ServiceBusService } from './service-bus.service';
 
 /**
  * Service for interacting with Azure Blob Storage
@@ -12,7 +13,10 @@ export class BlobStorageService {
   private readonly logger = new Logger(BlobStorageService.name);
   private readonly containerClient: ContainerClient;
 
-  constructor(private readonly retinaImageRepository: RetinaImageRepository) {
+  constructor(
+    private readonly retinaImageRepository: RetinaImageRepository,
+    private readonly serviceBusService: ServiceBusService,
+  ) {
     try {
       const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
       const containerName = process.env.AZURE_STORAGE_CONTAINER_NAME;
@@ -172,6 +176,13 @@ export class BlobStorageService {
         blobPath,
       );
 
+      // Send command to service bus
+      await this.serviceBusService.sendRetinaImageCommand({
+        image_path: blobPath,
+        employeeId: employeeId,
+        imgId: retinaImage.id,
+      });
+
       this.logger.log(`Retina photo uploaded successfully: ${blobPath}`);
       return {
         url: blockBlobClient.url,
@@ -319,6 +330,41 @@ export class BlobStorageService {
         error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to delete retina photo: ${errorMessage}`);
       throw error;
+    }
+  }
+
+  /**
+   * Upload a blob to storage and return path information
+   * @param fileBuffer - Buffer containing file data
+   * @param blobName - Name to use for the blob
+   * @param contentType - MIME type of the file
+   * @returns Object containing success status and path of the uploaded blob
+   */
+  async uploadBlob(
+    fileBuffer: Buffer,
+    blobName: string,
+    contentType: string,
+  ): Promise<{ success: boolean; path: string }> {
+    try {
+      const blockBlobClient = this.containerClient.getBlockBlobClient(blobName);
+
+      await blockBlobClient.upload(fileBuffer, fileBuffer.length, {
+        blobHTTPHeaders: { blobContentType: contentType },
+      });
+
+      this.logger.log(`Blob uploaded successfully: ${blobName}`);
+      return {
+        success: true,
+        path: blobName,
+      };
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to upload blob: ${errorMessage}`);
+      return {
+        success: false,
+        path: '',
+      };
     }
   }
 
