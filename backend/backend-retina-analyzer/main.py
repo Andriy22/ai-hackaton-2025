@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 import uuid
 import cv2
 from typing import Dict, Any, List, Optional
+import datetime
 
 # Configure logging
 logging.basicConfig(
@@ -214,6 +215,38 @@ class RetinaAnalyzerService:
             
             return error_message
     
+    async def _send_validation_response(self, response_data: Dict[str, Any]) -> None:
+        """
+        Helper method to send validation responses to the correct queue.
+        
+        This ensures all validation responses are sent to the validation response queue
+        with proper error handling and logging.
+        
+        Args:
+            response_data: The response data to send
+        """
+        if not self.validation_response_queue_name:
+            logger.error("Validation response queue name not configured. Cannot send response.")
+            return
+            
+        try:
+            # Ensure messageId is included
+            if 'messageId' not in response_data:
+                response_data['messageId'] = str(uuid.uuid4())
+                
+            # Add timestamp
+            response_data['timestamp'] = str(datetime.datetime.now())
+            
+            # Send the message
+            await self.service_bus.send_message(
+                message_data=response_data,
+                queue_name=self.validation_response_queue_name
+            )
+            logger.info(f"Validation response sent to queue '{self.validation_response_queue_name}': {response_data}")
+        except Exception as e:
+            logger.error(f"Failed to send validation response: {str(e)}")
+            logger.error(f"Response data that failed to send: {response_data}")
+    
     async def validate_retina(self, message_data: Dict[str, Any]):
         """
         Validate a retina image against multiple employee retina scans.
@@ -246,13 +279,9 @@ class RetinaAnalyzerService:
                     "status": "error",
                     "message": "Missing required field: image_path",
                     "matchingEmployeeId": None,
-                    "messageId": message_id,
-                    "originatingInstance": originating_instance
+                    "messageId": message_id
                 }
-                await self.service_bus.send_message(
-                    message_data=response,
-                    queue_name=self.validation_response_queue_name
-                )
+                await self._send_validation_response(response)
                 return response
             
             if not employees:
@@ -261,13 +290,9 @@ class RetinaAnalyzerService:
                     "status": "error",
                     "message": "Missing required field: employees",
                     "matchingEmployeeId": None,
-                    "messageId": message_id,
-                    "originatingInstance": originating_instance
+                    "messageId": message_id
                 }
-                await self.service_bus.send_message(
-                    message_data=response,
-                    queue_name=self.validation_response_queue_name
-                )
+                await self._send_validation_response(response)
                 return response
             
             logger.info(f"Validating retina image from blob: {blob_path} against {len(employees)} employees")
@@ -280,13 +305,9 @@ class RetinaAnalyzerService:
                     "status": "error",
                     "message": f"Failed to download image from blob: {blob_path}",
                     "matchingEmployeeId": None,
-                    "messageId": message_id,
-                    "originatingInstance": originating_instance
+                    "messageId": message_id
                 }
-                await self.service_bus.send_message(
-                    message_data=response,
-                    queue_name=self.validation_response_queue_name
-                )
+                await self._send_validation_response(response)
                 return response
             
             try:
@@ -298,13 +319,9 @@ class RetinaAnalyzerService:
                         "status": "error",
                         "message": f"Could not read image from path: {temp_image_path}",
                         "matchingEmployeeId": None,
-                        "messageId": message_id,
-                        "originatingInstance": originating_instance
+                        "messageId": message_id
                     }
-                    await self.service_bus.send_message(
-                        message_data=response,
-                        queue_name=self.validation_response_queue_name
-                    )
+                    await self._send_validation_response(response)
                     return response
                 
                 # Extract features from the input image
@@ -351,16 +368,11 @@ class RetinaAnalyzerService:
                     "status": "success",
                     "matchingEmployeeId": matching_employee_id,
                     "similarity": highest_similarity if matching_employee_id else 0.0,
-                    "messageId": message_id,
-                    "originatingInstance": originating_instance
+                    "messageId": message_id
                 }
                 
                 # Send response
-                await self.service_bus.send_message(
-                    message_data=response,
-                    queue_name=self.validation_response_queue_name
-                )
-                logger.info(f"Validation response sent to queue '{self.validation_response_queue_name}': {response}")
+                await self._send_validation_response(response)
                 
                 return response
                 
@@ -381,18 +393,10 @@ class RetinaAnalyzerService:
                 "status": "error",
                 "message": f"Error validating retina: {str(e)}",
                 "matchingEmployeeId": None,
-                "messageId": message_data.get('messageId', str(uuid.uuid4())),
-                "originatingInstance": originating_instance
+                "messageId": message_data.get('messageId', str(uuid.uuid4()))
             }
             
-            try:
-                await self.service_bus.send_message(
-                    message_data=error_response,
-                    queue_name=self.validation_response_queue_name
-                )
-                logger.info(f"Error response sent to queue '{self.validation_response_queue_name}': {error_response}")
-            except Exception as send_error:
-                logger.error(f"Failed to send error response: {str(send_error)}")
+            await self._send_validation_response(error_response)
             
             return error_response
 
