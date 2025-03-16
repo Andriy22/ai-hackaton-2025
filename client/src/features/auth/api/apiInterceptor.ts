@@ -1,6 +1,6 @@
 import useAuthStore from '../store/useAuthStore';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://[::1]:3000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://lumina-secure-api.azurewebsites.net';
 
 /**
  * Creates a fetch function that automatically adds authentication headers

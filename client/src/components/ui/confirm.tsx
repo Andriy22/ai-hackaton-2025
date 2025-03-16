@@ -21,6 +21,7 @@ interface ConfirmProps {
   confirmVariant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   confirmIcon?: React.ReactNode;
   onConfirm: () => void;
+  onCancel?: () => void;
 }
 
 export const Confirm: React.FC<ConfirmProps> = ({
@@ -33,9 +34,17 @@ export const Confirm: React.FC<ConfirmProps> = ({
   confirmVariant = 'default',
   confirmIcon,
   onConfirm,
+  onCancel,
 }) => {
   const handleConfirm = () => {
     onConfirm();
+    setOpen(false);
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    }
     setOpen(false);
   };
 
@@ -48,7 +57,7 @@ export const Confirm: React.FC<ConfirmProps> = ({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel asChild>
-            <Button variant="outline">{cancelText}</Button>
+            <Button variant="outline" onClick={handleCancel}>{cancelText}</Button>
           </AlertDialogCancel>
           <AlertDialogAction asChild>
             <Button variant={confirmVariant} onClick={handleConfirm} className="flex items-center gap-2">

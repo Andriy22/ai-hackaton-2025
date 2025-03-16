@@ -9,7 +9,9 @@ import Landing from './pages/Landing';
 import { NotFound } from './pages/NotFound';
 import { UserDetails } from './features/dashboard/modules/users/components/UserDetails';
 import { OrganizationDetails } from './features/dashboard/modules/organizations/components/OrganizationDetails';
+import { EmployeeDetails } from './features/dashboard/modules/employees';
 import Organizations from './pages/Organizations';
+import ValidationPage from './pages/Validation';
 import { paths } from './routes/paths';
 import ErrorBoundary from './components/ErrorBoundary';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
@@ -49,6 +51,8 @@ const App = () => {
                             <Route path={paths.users.details()} element={<UserDetails />} />
                             <Route path={paths.organizations.root} element={<Organizations />} />
                             <Route path={paths.organizations.details()} element={<OrganizationDetails />} />
+                            <Route path={paths.employees.details()} element={<EmployeeDetails />} />
+                            <Route path={paths.validation} element={<ValidationPage />} />
                             <Route path={paths.account} element={<Account />} />
                         </Route>
 

@@ -38,7 +38,7 @@ interface OrganizationsState {
     // Employee management
     fetchOrganizationEmployees: (organizationId: string) => Promise<void>;
     createEmployee: (organizationId: string, data: any) => Promise<void>;
-    updateEmployee: (employeeId: string, data: any) => Promise<void>;
+    updateEmployee: (employeeId: string, data: any) => Promise<any>;
     deleteEmployee: (employeeId: string) => Promise<void>;
 }
 
@@ -157,6 +157,7 @@ const useOrganizationsStore = create<OrganizationsState>((set, get) => ({
         set({ isLoadingUsers: true, error: null });
         try {
             const response = await organizationApi.getOrganizationUsers(organizationId);
+
             set({
                 organizationUsers: response.users,
                 isLoadingUsers: false
@@ -174,7 +175,9 @@ const useOrganizationsStore = create<OrganizationsState>((set, get) => ({
         try {
             await organizationApi.addUserToOrganization(organizationId, data);
             // Refresh the users list after adding a new user
-            get().fetchOrganizationUsers(organizationId);
+            await get().fetchOrganizationUsers(organizationId);
+            // Refresh organization to update counts
+            await get().fetchOrganization(organizationId);
             set({ isLoading: false });
         } catch (error: any) {
             set({ 
@@ -189,7 +192,9 @@ const useOrganizationsStore = create<OrganizationsState>((set, get) => ({
         try {
             await organizationApi.removeUserFromOrganization(organizationId, userId);
             // Refresh the users list after removing a user
-            get().fetchOrganizationUsers(organizationId);
+            await get().fetchOrganizationUsers(organizationId);
+            // Refresh organization to update counts
+            await get().fetchOrganization(organizationId);
             set({ isLoading: false });
         } catch (error: any) {
             set({ 
@@ -204,7 +209,7 @@ const useOrganizationsStore = create<OrganizationsState>((set, get) => ({
         try {
             await organizationApi.updateUserRole(organizationId, userId, data);
             // Refresh the users list after updating a user's role
-            get().fetchOrganizationUsers(organizationId);
+            await get().fetchOrganizationUsers(organizationId);
             set({ isLoading: false });
         } catch (error: any) {
             set({ 
@@ -236,32 +241,39 @@ const useOrganizationsStore = create<OrganizationsState>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             await organizationApi.createEmployee(organizationId, data);
-            // Refresh the employees list after adding a new employee
-            get().fetchOrganizationEmployees(organizationId);
+            // Refresh employees list
+            await get().fetchOrganizationEmployees(organizationId);
+            // Refresh organization to update counts
+            await get().fetchOrganization(organizationId);
             set({ isLoading: false });
         } catch (error: any) {
             set({ 
                 error: error.message || 'Failed to create employee', 
                 isLoading: false 
             });
+            throw error;
         }
     },
     
     updateEmployee: async (employeeId, data) => {
         set({ isLoading: true, error: null });
         try {
-            await organizationApi.updateEmployee(employeeId, data);
-            // Refresh the employees list after updating an employee
-            const { selectedOrganization } = get();
-            if (selectedOrganization) {
-                get().fetchOrganizationEmployees(selectedOrganization.id);
+            const response = await organizationApi.updateEmployee(employeeId, data);
+            // Refresh employees list for the organization
+            const orgId = get().selectedOrganization?.id;
+            if (orgId) {
+                await get().fetchOrganizationEmployees(orgId);
+                // Refresh organization to update counts
+                await get().fetchOrganization(orgId);
             }
             set({ isLoading: false });
+            return response;
         } catch (error: any) {
             set({ 
                 error: error.message || 'Failed to update employee', 
                 isLoading: false 
             });
+            throw error;
         }
     },
     
@@ -269,10 +281,12 @@ const useOrganizationsStore = create<OrganizationsState>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             await organizationApi.deleteEmployee(employeeId);
-            // Refresh the employees list after deleting an employee
-            const { selectedOrganization } = get();
-            if (selectedOrganization) {
-                get().fetchOrganizationEmployees(selectedOrganization.id);
+            // Refresh employees list for the organization
+            const orgId = get().selectedOrganization?.id;
+            if (orgId) {
+                await get().fetchOrganizationEmployees(orgId);
+                // Refresh organization to update counts
+                await get().fetchOrganization(orgId);
             }
             set({ isLoading: false });
         } catch (error: any) {
@@ -280,6 +294,7 @@ const useOrganizationsStore = create<OrganizationsState>((set, get) => ({
                 error: error.message || 'Failed to delete employee', 
                 isLoading: false 
             });
+            throw error;
         }
     }
 }));

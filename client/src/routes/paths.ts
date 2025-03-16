@@ -15,6 +15,10 @@ export const paths = {
     details: (id = ':organizationId') => `/dashboard/organizations/${id}`,
     edit: (id = ':organizationId') => `/dashboard/organizations/${id}/edit`,
   },
+  employees: {
+    details: (id = ':employeeId') => `/dashboard/employees/${id}`,
+  },
+  validation: '/validation',
   account: '/account'
 } as const;
 

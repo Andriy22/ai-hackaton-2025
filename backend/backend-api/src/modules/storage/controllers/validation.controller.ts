@@ -112,7 +112,7 @@ export class ValidationController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN, UserRole.VALIDATOR)
   @UseInterceptors(FileInterceptor('file'))
   async validateRetinaImage(
     @UploadedFile() file: any,

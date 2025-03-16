@@ -203,8 +203,6 @@ export const UserForm = ({ user, isOpen, onClose, isEditMode }: UserFormProps) =
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={UserRole.SUPER_ADMIN}>Super Admin</SelectItem>
-                <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
-                <SelectItem value={UserRole.VALIDATOR}>Validator</SelectItem>
               </SelectContent>
             </Select>
           </div>

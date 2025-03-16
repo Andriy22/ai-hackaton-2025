@@ -3,11 +3,6 @@ export interface LoginCredentials {
   password: string;
 }
 
-export interface RegisterCredentials extends LoginCredentials {
-  firstName: string;
-  lastName: string;
-}
-
 export interface Tokens {
   accessToken: string;
   refreshToken: string;
@@ -21,6 +16,7 @@ export interface User {
   role: string;
   createdAt: string;
   updatedAt: string;
+  organizationId: string | null;
 }
 
 export interface AuthResponse {

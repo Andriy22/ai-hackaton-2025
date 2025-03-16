@@ -224,7 +224,7 @@ export const OrganizationsTable = () => {
                           e.stopPropagation();
                           handleViewDetails(organization.id);
                         }}
-                        className="rounded p-1 text-green-500 hover:bg-green-100 hover:text-green-700"
+                        className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
                         aria-label={`View details of ${organization.name}`}
                         tabIndex={0}
                         onKeyDown={(e) => {

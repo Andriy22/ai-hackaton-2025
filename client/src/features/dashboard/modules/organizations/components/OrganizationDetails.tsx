@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Building, Trash, Users, UserRound } from 'lucide-react';
 import useOrganizationsStore from '../store/useOrganizationsStore';
-import { UpdateOrganizationDto, Employee, UpdateUserRoleDto, UserRole } from '../types/types';
+import { UpdateOrganizationDto, Employee } from '../types/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,18 +27,15 @@ export const OrganizationDetails = () => {
   const navigate = useNavigate();
   const {
     selectedOrganization,
+    error,
+    isLoading,
     fetchOrganization,
     updateOrganization,
     deleteOrganization,
-    error,
-    isLoading,
-    organizationUsers,
+    fetchOrganizationEmployees,
     organizationEmployees,
-    isLoadingUsers,
     isLoadingEmployees,
-    removeUserFromOrganization,
-    updateUserRole,
-    deleteEmployee,
+    deleteEmployee
   } = useOrganizationsStore();
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -51,8 +48,9 @@ export const OrganizationDetails = () => {
   useEffect(() => {
     if (organizationId) {
       fetchOrganization(organizationId);
+      fetchOrganizationEmployees(organizationId);
     }
-  }, [organizationId, fetchOrganization]);
+  }, [organizationId, fetchOrganization, fetchOrganizationEmployees]);
 
   useEffect(() => {
     if (selectedOrganization) {
@@ -89,23 +87,6 @@ export const OrganizationDetails = () => {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-  };
-
-  // User management handlers
-  const handleRemoveUser = async (userId: string) => {
-    try {
-      await removeUserFromOrganization(organizationId || '', userId);
-    } catch (error) {
-      console.error('Failed to remove user:', error);
-    }
-  };
-
-  const handleUpdateUserRole = async (userId: string, role: UserRole) => {
-    try {
-      await updateUserRole(organizationId || '', userId, { role });
-    } catch (error) {
-      console.error('Failed to update user role:', error);
-    }
   };
 
   // Employee management handlers
@@ -268,25 +249,10 @@ export const OrganizationDetails = () => {
       <div className="rounded-lg bg-white p-6 shadow-sm">
         <OrganizationTabs defaultValue={activeTab} onChange={handleTabChange}>
           <OrganizationTabContent value="users">
-            <OrganizationUsers
-              organizationId={organizationId || ''}
-              users={organizationUsers}
-              isLoading={isLoadingUsers}
-              error={error}
-              onRemoveUser={handleRemoveUser}
-              onUpdateRole={handleUpdateUserRole}
-            />
+            <OrganizationUsers organizationId={organizationId || ''} />
           </OrganizationTabContent>
           <OrganizationTabContent value="employees">
-            <OrganizationEmployees
-              organizationId={organizationId || ''}
-              employees={organizationEmployees}
-              isLoading={isLoadingEmployees}
-              error={error}
-              onEditEmployee={handleEditEmployee}
-              onDeleteEmployee={handleDeleteEmployee}
-              onAddEmployee={handleAddEmployee}
-            />
+            <OrganizationEmployees organizationId={organizationId || ''}/>
           </OrganizationTabContent>
         </OrganizationTabs>
       </div>
@@ -300,6 +266,7 @@ export const OrganizationDetails = () => {
         confirmVariant="destructive"
         confirmIcon={<Trash className="h-4 w-4" />}
         onConfirm={handleDelete}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
       />
     </div>
   );
