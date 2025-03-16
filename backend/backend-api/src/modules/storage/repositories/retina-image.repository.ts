@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { RetinaImage } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
+import {
+  excludeDeleted,
+  softDeleteData,
+} from '../../../common/utils/soft-delete.util';
 
 /**
  * Repository for retina image-related database operations
@@ -37,7 +41,7 @@ export class RetinaImageRepository {
    */
   async findByEmployeeId(employeeId: string): Promise<RetinaImage[]> {
     return this.prisma.retinaImage.findMany({
-      where: { employeeId },
+      where: excludeDeleted({ employeeId }),
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -48,8 +52,8 @@ export class RetinaImageRepository {
    * @returns The retina image with the specified ID or null if not found
    */
   async findById(id: string): Promise<RetinaImage | null> {
-    return this.prisma.retinaImage.findUnique({
-      where: { id },
+    return this.prisma.retinaImage.findFirst({
+      where: excludeDeleted({ id }),
     });
   }
 
@@ -60,25 +64,26 @@ export class RetinaImageRepository {
    */
   async findByPath(path: string): Promise<RetinaImage | null> {
     return this.prisma.retinaImage.findFirst({
-      where: { path },
+      where: excludeDeleted({ path }),
     });
   }
 
   /**
-   * Delete a retina image
+   * Soft delete a retina image
    * @param id - Retina image ID
-   * @returns The deleted retina image
+   * @returns The soft-deleted retina image
    */
   async delete(id: string): Promise<RetinaImage> {
-    return this.prisma.retinaImage.delete({
+    return this.prisma.retinaImage.update({
       where: { id },
+      data: softDeleteData(),
     });
   }
 
   /**
-   * Delete a retina image by path
+   * Soft delete a retina image by path
    * @param path - Path to the retina image in blob storage
-   * @returns The deleted retina image or null if not found
+   * @returns The soft-deleted retina image or null if not found
    */
   async deleteByPath(path: string): Promise<RetinaImage | null> {
     const image = await this.findByPath(path);
@@ -106,7 +111,7 @@ export class RetinaImageRepository {
           processedAt: new Date(),
         },
       });
-    } catch (error) {
+    } catch {
       // If the record doesn't exist, return null
       return null;
     }
@@ -119,11 +124,12 @@ export class RetinaImageRepository {
    */
   async findByOrganizationId(organizationId: string): Promise<RetinaImage[]> {
     return this.prisma.retinaImage.findMany({
-      where: {
+      where: excludeDeleted({
         employee: {
           organizationId,
+          deleted: false,
         },
-      },
+      }),
       include: {
         employee: true,
       },

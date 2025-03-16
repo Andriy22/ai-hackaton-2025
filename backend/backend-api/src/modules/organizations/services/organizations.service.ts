@@ -142,6 +142,8 @@ export class OrganizationsService {
 
     const usersWithOrgId = users.map((user) => ({
       ...user,
+      deleted: false,
+      deletedAt: null,
       organizationId,
     }));
 
@@ -227,12 +229,12 @@ export class OrganizationsService {
    * Remove a user from an organization
    * @param organizationId - Organization ID
    * @param userId - User ID
-   * @returns The removed user
+   * @returns The removed user without password
    */
   async removeUserFromOrganization(
     organizationId: string,
     userId: string,
-  ): Promise<User> {
+  ): Promise<Omit<User, 'password'>> {
     const organization =
       await this.organizationsRepository.findById(organizationId);
 
@@ -254,10 +256,8 @@ export class OrganizationsService {
       );
     }
 
-    // Delete the user from the database
-    return this.prisma.user.delete({
-      where: { id: userId },
-    });
+    // Use soft delete instead of hard delete
+    return this.usersService.deleteUser(userId);
   }
 
   /**
@@ -359,6 +359,7 @@ export class OrganizationsService {
       throw new NotFoundException(`Organization with ID ${id} not found`);
     }
 
+    // The repository's delete method already implements soft delete
     return this.organizationsRepository.delete(id);
   }
 
@@ -451,6 +452,7 @@ export class OrganizationsService {
       throw new NotFoundException(`Employee with ID ${employeeId} not found`);
     }
 
+    // The repository's deleteEmployee method already implements soft delete
     return this.organizationsRepository.deleteEmployee(employeeId);
   }
 }

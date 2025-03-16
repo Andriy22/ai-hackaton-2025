@@ -28,6 +28,8 @@ model User {
   role          UserRole       @default(ORG_ADMIN)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  deleted       Boolean        @default(false)
+  deletedAt     DateTime?
   refreshTokens RefreshToken[]
   organization  Organization?  @relation(fields: [organizationId], references: [id])
   organizationId String?
@@ -43,6 +45,8 @@ model RefreshToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deleted   Boolean  @default(false)
+  deletedAt DateTime?
 
   @@index([userId])
 }
@@ -52,6 +56,8 @@ model Organization {
   name      String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+  deleted   Boolean    @default(false)
+  deletedAt DateTime?
   users     User[]
   employees Employee[]
 }
@@ -64,6 +70,8 @@ model Employee {
   position       String
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  deleted        Boolean       @default(false)
+  deletedAt      DateTime?
   organization   Organization  @relation(fields: [organizationId], references: [id])
   organizationId String
   images         RetinaImage[]
@@ -78,6 +86,8 @@ model RetinaImage {
   documentId  String?   // Cosmos DB document ID
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  deleted     Boolean   @default(false)
+  deletedAt   DateTime?
   processedAt DateTime?
   employee    Employee  @relation(fields: [employeeId], references: [id])
   employeeId  String

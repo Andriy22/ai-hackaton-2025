@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { User, UserRole } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
+import {
+  excludeDeleted,
+  softDeleteData,
+} from '../../../common/utils/soft-delete.util';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 
@@ -42,7 +46,7 @@ export class UsersRepository {
     return this.prisma.user.findMany({
       skip: options?.skip,
       take: options?.take,
-      where: options?.where,
+      where: excludeDeleted(options?.where),
     });
   }
 
@@ -52,8 +56,8 @@ export class UsersRepository {
    * @returns The user with the specified ID or null if not found
    */
   async findById(id: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
-      where: { id },
+    return this.prisma.user.findFirst({
+      where: excludeDeleted({ id }),
     });
   }
 
@@ -63,8 +67,8 @@ export class UsersRepository {
    * @returns The user with the specified email or null if not found
    */
   async findByEmail(email: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
-      where: { email },
+    return this.prisma.user.findFirst({
+      where: excludeDeleted({ email }),
     });
   }
 
@@ -82,13 +86,14 @@ export class UsersRepository {
   }
 
   /**
-   * Delete a user
+   * Soft delete a user
    * @param id - User ID
-   * @returns The deleted user
+   * @returns The soft-deleted user
    */
   async delete(id: string): Promise<User> {
-    return this.prisma.user.delete({
+    return this.prisma.user.update({
       where: { id },
+      data: softDeleteData(),
     });
   }
 
@@ -99,7 +104,7 @@ export class UsersRepository {
    */
   async count(where?: { role?: UserRole }): Promise<number> {
     return this.prisma.user.count({
-      where,
+      where: excludeDeleted(where),
     });
   }
 }
