@@ -32,6 +32,7 @@ import { ValidateRetinaImageDto } from '../dto/validate-retina-image.dto';
 import { RetinaImageRepository } from '../repositories/retina-image.repository';
 import { BlobStorageService } from '../services/blob-storage.service';
 import { ValidationReceiverService } from '../services/validation-receiver.service';
+import { ValidationStatisticsService } from '../services/validation-statistics.service';
 
 /**
  * Interface for uploaded file
@@ -103,6 +104,7 @@ export class ValidationController {
     private readonly validationReceiverService: ValidationReceiverService,
     private readonly organizationsService: OrganizationsService,
     private readonly httpService: HttpService,
+    private readonly validationStatisticsService: ValidationStatisticsService,
   ) {}
 
   /**
@@ -222,12 +224,32 @@ export class ValidationController {
         // Send the validation request to the retina analyzer API
         const response = await this.sendValidationRequest(validationRequest);
 
+        if (!response || !response.matchingEmployeeId) {
+          // record failed validation
+          await this.validationStatisticsService.recordFailedValidation(
+            organizationId,
+          );
+          return response;
+        }
+
+        // Record successful validation
+        await this.validationStatisticsService.recordSuccessfulValidation(
+          organizationId,
+          response.matchingEmployeeId,
+          response.similarity ?? 0,
+        );
+
         // Return the validation result
         return response;
       } catch (apiError: unknown) {
         const errorMessage =
           apiError instanceof Error ? apiError.message : 'Unknown API error';
         this.logger.error(`Error calling retina analyzer API: ${errorMessage}`);
+
+        // record failed validation
+        await this.validationStatisticsService.recordFailedValidation(
+          organizationId,
+        );
 
         return {
           status: 'error',
@@ -279,6 +301,7 @@ export class ValidationController {
 
       if (!response || !response.data) {
         this.logger.error('No response received from retina analyzer API');
+
         return {
           status: 'error',
           message: 'Failed to get validation result. Please try again later.',

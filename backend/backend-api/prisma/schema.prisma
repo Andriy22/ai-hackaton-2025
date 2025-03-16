@@ -52,14 +52,15 @@ model RefreshToken {
 }
 
 model Organization {
-  id        String     @id @default(uuid())
-  name      String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  deleted   Boolean    @default(false)
-  deletedAt DateTime?
-  users     User[]
-  employees Employee[]
+  id                  String                @id @default(uuid())
+  name                String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  deleted             Boolean               @default(false)
+  deletedAt           DateTime?
+  users               User[]
+  employees           Employee[]
+  validationStatistics ValidationStatistics[]
 }
 
 model Employee {
@@ -75,6 +76,7 @@ model Employee {
   organization   Organization  @relation(fields: [organizationId], references: [id])
   organizationId String
   images         RetinaImage[]
+  validationStatistics ValidationStatistics[]
 
   @@index([organizationId])
 }
@@ -93,4 +95,23 @@ model RetinaImage {
   employeeId  String
 
   @@index([employeeId])
+}
+
+/**
+ * Model for storing validation statistics
+ */
+model ValidationStatistics {
+  id             String      @id @default(uuid())
+  organizationId String
+  employeeId     String?
+  timestamp      DateTime    @default(now())
+  isSuccessful   Boolean
+  similarity     Float?
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  employee       Employee?    @relation(fields: [employeeId], references: [id])
+
+  @@index([organizationId])
+  @@index([employeeId])
+  @@index([timestamp])
+  @@index([isSuccessful])
 }
