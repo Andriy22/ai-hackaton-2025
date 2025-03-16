@@ -11,21 +11,6 @@ import EmployeeDetails from '@/features/validation/components/EmployeeDetails';
 import OrganizationRequired from '@/features/validation/components/OrganizationRequired';
 import ValidationStatus, { ValidationStatusType } from '@/features/validation/components/ValidationStatus';
 
-// Custom animation styles
-const confettiAnimations = {
-  confetti1: "absolute w-2 h-2 bg-yellow-500 rounded-full animate-[confetti1_3s_ease-in-out_infinite]",
-  confetti2: "absolute w-3 h-3 bg-blue-500 rounded-full animate-[confetti2_2.8s_ease-in-out_infinite]", 
-  confetti3: "absolute w-2 h-2 bg-green-500 rounded-full animate-[confetti3_2.5s_ease-in-out_infinite]",
-  confetti4: "absolute w-3 h-3 bg-pink-500 rounded-full animate-[confetti4_3.2s_ease-in-out_infinite]",
-  confetti5: "absolute w-2 h-2 bg-purple-500 rounded-full animate-[confetti5_2.7s_ease-in-out_infinite]",
-  confetti6: "absolute w-4 h-4 bg-teal-500 rounded-full animate-[confetti6_3s_ease-in-out_infinite]",
-};
-
-// Blob animation
-const blobAnimation = "animate-[blob_7s_infinite]";
-const blobAnimationDelay2 = "animate-[blob_7s_infinite_2s]";
-const blobAnimationDelay4 = "animate-[blob_7s_infinite_4s]";
-
 const ValidationPage: React.FC = () => {
   const { user } = useAuthStore();
   const { 
@@ -38,7 +23,6 @@ const ValidationPage: React.FC = () => {
     validateImage 
   } = useValidationStore();
   
-  const [showConfetti, setShowConfetti] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   
   // Update active step based on status
@@ -49,9 +33,6 @@ const ValidationPage: React.FC = () => {
       setActiveStep(1);
     } else if (status === ValidationStatusType.SUCCESS) {
       setActiveStep(2);
-      setShowConfetti(true);
-      const timer = setTimeout(() => setShowConfetti(false), 5000);
-      return () => clearTimeout(timer);
     }
   }, [status]);
 
@@ -91,30 +72,6 @@ const ValidationPage: React.FC = () => {
             transform: scale(1) translate(0px, 0px);
           }
         }
-        @keyframes confetti1 {
-          0% { transform: translate(0, 0); opacity: 1; }
-          100% { transform: translate(-100px, -300px) rotate(720deg); opacity: 0; }
-        }
-        @keyframes confetti2 {
-          0% { transform: translate(0, 0); opacity: 1; }
-          100% { transform: translate(200px, -200px) rotate(-720deg); opacity: 0; }
-        }
-        @keyframes confetti3 {
-          0% { transform: translate(0, 0); opacity: 1; }
-          100% { transform: translate(-150px, -240px) rotate(840deg); opacity: 0; }
-        }
-        @keyframes confetti4 {
-          0% { transform: translate(0, 0); opacity: 1; }
-          100% { transform: translate(120px, -300px) rotate(-540deg); opacity: 0; }
-        }
-        @keyframes confetti5 {
-          0% { transform: translate(0, 0); opacity: 1; }
-          100% { transform: translate(-180px, -200px) rotate(720deg); opacity: 0; }
-        }
-        @keyframes confetti6 {
-          0% { transform: translate(0, 0); opacity: 1; }
-          100% { transform: translate(250px, -350px) rotate(-1080deg); opacity: 0; }
-        }
         @keyframes pulse-ring {
           0% { transform: scale(0.5); opacity: 0; }
           50% { opacity: 0.5; }
@@ -126,32 +83,6 @@ const ValidationPage: React.FC = () => {
       <div className="absolute top-40 left-40 w-72 h-72 bg-teal-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20" style={{ animation: "blob 7s infinite 2s" }}></div>
       <div className="absolute bottom-40 right-1/4 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20" style={{ animation: "blob 7s infinite 4s" }}></div>
       
-      {/* Confetti animation on success */}
-      {showConfetti && (
-        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className={confettiAnimations.confetti1} style={{ left: "50%", top: "50%" }}></div>
-            <div className={confettiAnimations.confetti2} style={{ left: "52%", top: "48%" }}></div>
-            <div className={confettiAnimations.confetti3} style={{ left: "48%", top: "52%" }}></div>
-            <div className={confettiAnimations.confetti4} style={{ left: "47%", top: "53%" }}></div>
-            <div className={confettiAnimations.confetti5} style={{ left: "53%", top: "47%" }}></div>
-            <div className={confettiAnimations.confetti6} style={{ left: "51%", top: "49%" }}></div>
-            
-            {/* Additional confetti particles */}
-            <div className={confettiAnimations.confetti1} style={{ left: "54%", top: "46%", animationDelay: "0.5s" }}></div>
-            <div className={confettiAnimations.confetti2} style={{ left: "46%", top: "54%", animationDelay: "0.3s" }}></div>
-            <div className={confettiAnimations.confetti3} style={{ left: "55%", top: "45%", animationDelay: "0.7s" }}></div>
-            <div className={confettiAnimations.confetti4} style={{ left: "45%", top: "55%", animationDelay: "0.2s" }}></div>
-            <div className={confettiAnimations.confetti5} style={{ left: "49%", top: "51%", animationDelay: "0.6s" }}></div>
-            <div className={confettiAnimations.confetti6} style={{ left: "51%", top: "49%", animationDelay: "0.9s" }}></div>
-            
-            {/* Success pulse ring animation */}
-            <div className="absolute w-32 h-32 rounded-full border-4 border-green-500 opacity-0" 
-                 style={{ animation: "pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite" }}></div>
-          </div>
-        </div>
-      )}
-
       <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
         <motion.div 
