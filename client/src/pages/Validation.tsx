@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
 import useAuthStore from '@/features/auth/store/useAuthStore';
 import useValidationStore from '@/features/validation/store/useValidationStore';
-import { motion, AnimatePresence } from 'framer-motion';
-import { EyeIcon, ShieldCheckIcon, CheckCircleIcon, UploadCloudIcon } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircleIcon, EyeIcon, ShieldCheckIcon, UploadCloudIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 // Import components
-import ValidationDropzone from '@/features/validation/components/ValidationDropzone';
-import ValidationResultComponent from '@/features/validation/components/ValidationResult';
 import EmployeeDetails from '@/features/validation/components/EmployeeDetails';
 import OrganizationRequired from '@/features/validation/components/OrganizationRequired';
+import ValidationDropzone from '@/features/validation/components/ValidationDropzone';
+import ValidationResultComponent from '@/features/validation/components/ValidationResult';
 import ValidationStatus, { ValidationStatusType } from '@/features/validation/components/ValidationStatus';
 
 // Custom animation styles
@@ -21,10 +21,6 @@ const confettiAnimations = {
   confetti6: "absolute w-4 h-4 bg-teal-500 rounded-full animate-[confetti6_3s_ease-in-out_infinite]",
 };
 
-// Blob animation
-const blobAnimation = "animate-[blob_7s_infinite]";
-const blobAnimationDelay2 = "animate-[blob_7s_infinite_2s]";
-const blobAnimationDelay4 = "animate-[blob_7s_infinite_4s]";
 
 const ValidationPage: React.FC = () => {
   const { user } = useAuthStore();

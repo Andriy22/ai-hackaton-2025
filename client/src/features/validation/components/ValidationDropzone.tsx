@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { LoaderCircle, Upload, FileImage, XCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dropzone } from '@/components/ui/dropzone';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircle, FileImage, LoaderCircle, XCircle } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface ValidationDropzoneProps {
   file: File | null;
