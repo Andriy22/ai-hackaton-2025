@@ -87,4 +87,46 @@ export class RetinaImageRepository {
     }
     return this.delete(image.id);
   }
+
+  /**
+   * Update a retina image with document ID
+   * @param imgId - Retina image ID
+   * @param documentId - Cosmos DB document ID
+   * @returns The updated retina image or null if not found
+   */
+  async updateDocumentId(
+    imgId: string,
+    documentId: string,
+  ): Promise<RetinaImage | null> {
+    try {
+      return this.prisma.retinaImage.update({
+        where: { id: imgId },
+        data: {
+          documentId,
+          processedAt: new Date(),
+        },
+      });
+    } catch (error) {
+      // If the record doesn't exist, return null
+      return null;
+    }
+  }
+
+  /**
+   * Find retina images by organization ID
+   * @param organizationId - Organization ID to find images for
+   * @returns Array of retina images for the organization
+   */
+  async findByOrganizationId(organizationId: string): Promise<RetinaImage[]> {
+    return this.prisma.retinaImage.findMany({
+      where: {
+        employee: {
+          organizationId,
+        },
+      },
+      include: {
+        employee: true,
+      },
+    });
+  }
 }

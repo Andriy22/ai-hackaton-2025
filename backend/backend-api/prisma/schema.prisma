@@ -75,6 +75,7 @@ model RetinaImage {
   id          String    @id @default(uuid())
   path        String
   features    Float[]   // Storing array of numbers as Float[]
+  documentId  String?   // Cosmos DB document ID
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   processedAt DateTime?

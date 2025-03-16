@@ -1,21 +1,39 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   ForbiddenException,
   Get,
   HttpStatus,
   InternalServerErrorException,
+  Inject,
   Logger,
   NotFoundException,
   Param,
   Post,
+  Query,
+  Req,
   Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Request, Response } from 'express';
+import { OrganizationsService } from '../../organizations/services/organizations.service';
+import { OrganizationEmployeeRetinasDto } from '../dto/organization-employee-retinas.dto';
+import { RetinaImageDto } from '../dto/retina-image.dto';
+import { ValidateRetinaImageDto } from '../dto/validate-retina-image.dto';
+import { BlobStorageService } from '../services/blob-storage.service';
+import { RetinaImageRepository } from '../repositories/retina-image.repository';
+import {
+  ServiceBusService,
+  RetinaValidationCommand,
+} from '../services/service-bus.service';
+import { ValidationReceiverService } from '../services/validation-receiver.service';
+import { v4 as uuidv4 } from 'uuid';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -24,27 +42,25 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { User, UserRole } from '@prisma/client';
-import { Response } from 'express';
-import { GetUser } from '../../../common/decorators/get-user.decorator';
-import { Roles } from '../../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../../common/guards/roles.guard';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { OrganizationsService } from '../../organizations/services/organizations.service';
-import { OrganizationEmployeeRetinasDto } from '../dto/organization-employee-retinas.dto';
-import { RetinaImageDto } from '../dto/retina-image.dto';
-import { BlobStorageService } from '../services/blob-storage.service';
+import { GetUser } from 'src/common/decorators/get-user.decorator';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
+import { User } from 'src/modules/users/interfaces/user.interface';
+import { UserRole } from '@prisma/client';
 
 /**
  * Interface for uploaded file to ensure type safety
  */
-interface MulterFile {
-  fieldname: string;
+interface UploadedFileMetadata {
+  /** Original name of the file */
   originalname: string;
-  encoding: string;
+  /** MIME type of the file */
   mimetype: string;
-  buffer: Buffer;
+  /** Size of the file in bytes */
   size: number;
+  /** Buffer containing the file data */
+  buffer: Buffer;
 }
 
 /**
@@ -65,6 +81,9 @@ export class StorageController {
 
   constructor(
     private readonly blobStorageService: BlobStorageService,
+    private readonly retinaImageRepository: RetinaImageRepository,
+    private readonly serviceBusService: ServiceBusService,
+    private readonly validationReceiverService: ValidationReceiverService,
     private readonly organizationsService: OrganizationsService,
   ) {}
 
@@ -125,7 +144,7 @@ export class StorageController {
   @UseInterceptors(FileInterceptor('file'))
   @Roles(UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN)
   async uploadImage(
-    @UploadedFile() file: MulterFile,
+    @UploadedFile() file: UploadedFileMetadata,
   ): Promise<{ url: string }> {
     if (!file) {
       throw new BadRequestException('No file uploaded');
@@ -173,7 +192,7 @@ export class StorageController {
   async uploadRetinaPhoto(
     @Param('organizationId') organizationId: string,
     @Param('employeeId') employeeId: string,
-    @UploadedFile() file: MulterFile,
+    @UploadedFile() file: UploadedFileMetadata,
     @GetUser() user: User,
   ): Promise<{ url: string; id: string }> {
     if (!file) {
@@ -335,6 +354,157 @@ export class StorageController {
         throw error;
       }
       throw new InternalServerErrorException('Error deleting retina photo');
+    }
+  }
+
+  /**
+   * Validate a retina image against existing employees
+   * @param file - The retina image file to validate
+   * @param validateDto - The validation request data
+   * @returns The validation result
+   */
+  @Post('validate-retina')
+  @ApiOperation({ summary: 'Validate a retina image' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+        organizationId: {
+          type: 'string',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Validation successful',
+    schema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string' },
+        matchingEmployeeId: { type: 'string', nullable: true },
+        similarity: { type: 'number', nullable: true },
+        message: { type: 'string', nullable: true },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN)
+  @UseInterceptors(FileInterceptor('file'))
+  async validateRetinaImage(
+    @GetUser() user: User,
+    @UploadedFile() file: any,
+    @Body() validateDto: ValidateRetinaImageDto,
+  ): Promise<any> {
+    try {
+      // Get the user from the request
+      // const user = this.request['user'];
+
+      // Determine the organization ID
+      let organizationId = validateDto.organizationId;
+
+      // If the user is not a super admin and an organization ID is provided, verify access
+      if (user && organizationId) {
+        const hasAccess =
+          user.role === UserRole.SUPER_ADMIN ||
+          (await this.organizationsService.checkUserOrganization(
+            organizationId,
+            user.id,
+          ));
+
+        if (!hasAccess) {
+          throw new ForbiddenException(
+            'You do not have access to this organization',
+          );
+        }
+      }
+
+      // Upload the file to blob storage
+      const blobName = `validation/${uuidv4()}-${file.originalname}`;
+      const uploadResult = await this.blobStorageService.uploadImage(
+        blobName,
+        file.buffer,
+        file.mimetype,
+      );
+
+      if (!uploadResult) {
+        throw new InternalServerErrorException(
+          'Failed to upload image to blob storage',
+        );
+      }
+
+      if (!organizationId) {
+        throw new BadRequestException('Organization ID is required');
+      }
+
+      // Get all employees with retina images for the organization
+      const employees =
+        await this.retinaImageRepository.findByOrganizationId(organizationId);
+
+      if (!employees || employees.length === 0) {
+        return {
+          status: 'error',
+          message:
+            'No employees with retina images found for this organization',
+        };
+      }
+
+      // Create a unique message ID for this validation request
+      const messageId = uuidv4();
+
+      // Prepare the validation command
+      const validationCommand: RetinaValidationCommand = {
+        image_path: uploadResult,
+        employees: employees.map((emp) => ({
+          employeeId: emp.employeeId,
+          documentId: emp.documentId || '',
+        })),
+        messageId,
+      };
+
+      // Send the command to the service bus
+      const sendResult =
+        await this.serviceBusService.sendRetinaValidationCommand(
+          validationCommand,
+        );
+
+      if (!sendResult) {
+        throw new InternalServerErrorException(
+          'Failed to send validation command to service bus',
+        );
+      }
+
+      // Wait for the validation response
+      const validationResponse =
+        await this.validationReceiverService.waitForValidationResponse(
+          messageId,
+        );
+
+      if (!validationResponse) {
+        return {
+          status: 'error',
+          message: 'Validation timed out. Please try again later.',
+        };
+      }
+
+      // Return the validation result
+      return {
+        status: validationResponse.status,
+        matchingEmployeeId: validationResponse.matchingEmployeeId,
+        similarity: validationResponse.similarity,
+      };
+    } catch (error) {
+      this.logger.error(`Error validating retina image: ${error.message}`);
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to validate retina image');
     }
   }
 
