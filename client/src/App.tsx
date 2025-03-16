@@ -1,7 +1,6 @@
-import { Suspense, useEffect } from "react";
-import { BrowserRouter as Router, Route, Routes, Navigate, Outlet } from "react-router-dom";
+import { Suspense } from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Layout from './components/layout/Layout';
-import { AuthGuard } from './features/auth/components/AuthGuard';
 import Login from './pages/auth/Login';
 import Dashboard from './pages/Dashboard';
 import Account from './pages/Account';
@@ -13,57 +12,35 @@ import { EmployeeDetails } from './features/dashboard/modules/employees';
 import Organizations from './pages/Organizations';
 import ValidationPage from './pages/Validation';
 import { paths } from './routes/paths';
-import ErrorBoundary from './components/ErrorBoundary';
+import ErrorBoundary from './components/layout/ErrorBoundary';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
-import useAuthStore from './features/auth/store/useAuthStore';
-import { Toaster } from './components/ui/sonner';
 
 const App = () => {
-    const { refreshToken } = useAuthStore();
-
-    // Try to refresh token on app load
-    useEffect(() => {
-        refreshToken();
-    }, [refreshToken]);
-
     return (
         <ErrorBoundary>
             <Router>
                 <Suspense fallback={<LoadingSpinner />}>
                     <Routes>
-                        {/* Public routes */}
+                        {/* Routes without Layout */}
                         <Route path={paths.auth.login} element={<Login />} />
-                        <Route path={paths.landing} element={<Landing />} />
-
-                        {/* Redirect root to dashboard */}
-                        <Route path="/" element={<Navigate to={paths.dashboard} replace />} />
-
-                        {/* Protected routes */}
-                        <Route element={
-                            <AuthGuard>
-                                <Layout>
-                                    <Outlet />
-                                </Layout>
-                            </AuthGuard>
-                        }>
-                            <Route path={paths.dashboard} element={<Dashboard />} />
-                            <Route path={paths.users.root} element={<Dashboard />} />
-                            <Route path={paths.users.details()} element={<UserDetails />} />
-                            <Route path={paths.organizations.root} element={<Organizations />} />
-                            <Route path={paths.organizations.details()} element={<OrganizationDetails />} />
-                            <Route path={paths.employees.details()} element={<EmployeeDetails />} />
-                            <Route path={paths.validation} element={<ValidationPage />} />
-                            <Route path={paths.account} element={<Account />} />
-                        </Route>
-
-                        {/* 404 route */}
-                        <Route path="*" element={<NotFound />} />
+                        <Route path={paths.home} element={<Landing />} />
+                        
+                        {/* Routes with Layout */}
+                        <Route path={paths.dashboard} element={<Layout><Dashboard /></Layout>} />
+                        <Route path={paths.organizations.root} element={<Layout><Organizations /></Layout>} />
+                        <Route path={paths.organizations.details()} element={<Layout><OrganizationDetails /></Layout>} />
+                        <Route path={paths.users.root} element={<Layout><UserDetails /></Layout>} />
+                        <Route path={paths.employees.details()} element={<Layout><EmployeeDetails /></Layout>} />
+                        <Route path={paths.validation} element={<Layout><ValidationPage /></Layout>} />
+                        <Route path={paths.account} element={<Layout><Account /></Layout>} />
+                        
+                        {/* Not Found */}
+                        <Route path="*" element={<Layout><NotFound /></Layout>} />
                     </Routes>
                 </Suspense>
-                <Toaster position="top-right" />
             </Router>
         </ErrorBoundary>
     );
-};
+}
 
 export default App;

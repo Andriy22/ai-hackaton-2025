@@ -12,7 +12,7 @@ export const RelatedArticles: React.FC = () => {
           <article className="group relative overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-md">
             <div className="aspect-[16/9] w-full overflow-hidden">
               <img
-                src="https://www.aratek.co/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Firis-recognition-scaled.4d77ee9e.jpg&w=3840&q=75" 
+                src="https://papilon.com.tr/Uploads/ac7d19411b8d4a3e9eff7e0b51cb73c3.jpg" 
                 alt="Iris recognition technology close-up" 
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
@@ -41,7 +41,7 @@ export const RelatedArticles: React.FC = () => {
           <article className="group relative overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-md">
             <div className="aspect-[16/9] w-full overflow-hidden">
               <img
-                src="https://www.aratek.co/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Ffingerprint-biometrics-scaled.6c2f3d1e.jpg&w=3840&q=75" 
+                src="https://cdn.prod.website-files.com/61845f7929f5aa517ebab941/63c51e1c483c3281017e9396_Aratek-what%20is%20iris%20recogntion%20article%20image.jpg" 
                 alt="Fingerprint scanning technology" 
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               />

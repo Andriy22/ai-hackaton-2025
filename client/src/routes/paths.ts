@@ -22,4 +22,27 @@ export const paths = {
   account: '/account'
 } as const;
 
+export const validatorAllowedPaths = [
+  paths.validation,
+  paths.account
+];
+
+export const adminAllowedPaths = [
+  paths.dashboard,
+  paths.account,
+  paths.employees.details(),
+  paths.organizations.details()
+];
+
+export const superAdminAllowedPaths = [
+  paths.dashboard,
+  paths.users.root,
+  paths.users.details(),
+  paths.organizations.root,
+  paths.organizations.details(),
+  paths.employees.details(),
+  paths.validation,
+  paths.account
+];
+
 export type AppPaths = typeof paths;

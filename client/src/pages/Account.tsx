@@ -1,7 +1,7 @@
 import React from 'react';
 import useAuthStore from '@/features/auth/store/useAuthStore';
 import { Shield, Mail, Calendar, User, Key, Clock } from 'lucide-react';
-import { getReadablUserRole } from '@/lib/utils';
+import { getReadableUserRole } from '@/lib/utils';
 import { UserRole } from '@/features/dashboard/modules/users/types/types';
 
 const Account: React.FC = () => {
@@ -25,15 +25,13 @@ const Account: React.FC = () => {
     </div>
   );
 
-  const avatarUrl = user?.firstName 
-    ? `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=6366f1&color=fff`
-    : "https://via.placeholder.com/150";
+  const avatarUrl = user?.firstName ? `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=6366f1&color=fff` : "https://via.placeholder.com/150";
 
   // Get readable role
   const getRole = () => {
     if (!user) return 'User';
     try {
-      return getReadablUserRole(user.role as UserRole);
+      return getReadableUserRole(user.role as UserRole);
     } catch (error) {
       return String(user.role);
     }
@@ -41,7 +39,7 @@ const Account: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-10">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-1xl mx-auto">
         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
           {/* Header with background */}
           <div className="relative bg-gradient-to-r from-indigo-500 to-purple-600 h-32 sm:h-48">

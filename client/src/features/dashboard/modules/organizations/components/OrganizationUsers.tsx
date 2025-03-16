@@ -2,7 +2,7 @@ import { User, UserRole as UserModuleRole } from '@/features/dashboard/modules/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Trash, UserCog, UserPlus } from 'lucide-react';
-import { getReadablUserRole } from '@/lib/utils';
+import { getReadableUserRole } from '@/lib/utils';
 import { LoadingState, ErrorState } from '@/components/ui/feedback';
 import { useState, useEffect } from 'react';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
@@ -199,7 +199,7 @@ export const OrganizationUsers = ({
                              user.role === 'ORG_ADMIN' ? "default" : "outline"}
                       className="font-normal"
                     >
-                      {getReadablUserRole(mapToUserModuleRole(user.role))}
+                      {getReadableUserRole(mapToUserModuleRole(user.role))}
                     </Badge>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
@@ -256,7 +256,7 @@ export const OrganizationUsers = ({
                     className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <label htmlFor={`role-${role}`} className="text-sm font-medium text-gray-700">
-                    {getReadablUserRole(mapToUserModuleRole(role))}
+                    {getReadableUserRole(mapToUserModuleRole(role))}
                   </label>
                 </div>
               ))}
@@ -264,7 +264,7 @@ export const OrganizationUsers = ({
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel asChild>
-              <Button type="button" variant="outline">Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setIsRoleDialogOpen(false)}>Cancel</Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
               <Button onClick={handleRoleUpdate}>Update Role</Button>
@@ -357,7 +357,7 @@ export const OrganizationUsers = ({
                         className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                       <label htmlFor={`add-role-${role}`} className="text-sm font-medium text-gray-700">
-                        {getReadablUserRole(mapToUserModuleRole(role))}
+                        {getReadableUserRole(mapToUserModuleRole(role))}
                       </label>
                     </div>
                   ))}
@@ -366,7 +366,7 @@ export const OrganizationUsers = ({
             </div>
             <AlertDialogFooter>
               <AlertDialogCancel asChild>
-                <Button  type="button" variant="outline">Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => setIsAddUserDialogOpen(false)}>Cancel</Button>
               </AlertDialogCancel>
               <AlertDialogAction asChild>
                 <Button type="submit">Add User</Button>

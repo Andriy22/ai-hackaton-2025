@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { paths } from '@/routes/paths';
 import { UserForm } from './UserForm';
-import { getReadablUserRole } from '@/lib/utils';
+import { getReadableUserRole } from '@/lib/utils';
 import { Confirm } from '@/components/ui/confirm';
 
 export const UserTable = () => {
@@ -226,7 +226,7 @@ export const UserTable = () => {
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getRoleColorClass(user.role)}`}>
-                      {getReadablUserRole(user.role)}
+                      {getReadableUserRole(user.role)}
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">

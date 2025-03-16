@@ -16,7 +16,7 @@ export function formatDate(date: string): string {
   });
 }
 
-export function getReadablUserRole(role: UserRole): string {
+export function getReadableUserRole(role: UserRole): string {
   switch (role) {
     case UserRole.SUPER_ADMIN:
       return "Super Admin";
