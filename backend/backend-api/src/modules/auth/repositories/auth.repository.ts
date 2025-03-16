@@ -46,14 +46,43 @@ export class AuthRepository {
   /**
    * Deletes a refresh token by its token value
    * @param token The refresh token to delete
-   * @returns The deleted refresh token
+   * @returns The deleted refresh token or null if not found
    */
-  async deleteRefreshToken(token: string): Promise<RefreshToken> {
-    return this.prisma.refreshToken.delete({
-      where: {
-        token,
-      },
-    });
+  async deleteRefreshToken(token: string): Promise<RefreshToken | null> {
+    try {
+      return await this.prisma.refreshToken.delete({
+        where: {
+          token,
+        },
+      });
+    } catch (error) {
+      // Check if it's a Prisma error with code P2025 (record not found)
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 'P2025'
+      ) {
+        // Record to delete does not exist
+        console.log(`Refresh token not found: ${token}`);
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async deleteRefreshById(id: string): Promise<RefreshToken | null> {
+    try {
+      return await this.prisma.refreshToken.delete({
+        where: {
+          id,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      console.log(`Refresh token not found: ${id}`);
+      return null;
+    }
   }
 
   /**

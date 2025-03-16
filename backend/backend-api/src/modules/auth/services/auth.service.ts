@@ -68,9 +68,12 @@ export class AuthService {
    * @returns New tokens
    */
   async refreshTokens(userId: string, refreshToken: string): Promise<Tokens> {
+    // Normalize token by trimming whitespace
+    const normalizedToken = refreshToken.trim();
+
     // Find refresh token in database
     const storedRefreshToken =
-      await this.authRepository.findRefreshTokenByToken(refreshToken);
+      await this.authRepository.findRefreshTokenByToken(normalizedToken);
 
     if (!storedRefreshToken) {
       throw new UnauthorizedException('Invalid refresh token');
@@ -84,7 +87,7 @@ export class AuthService {
     // Check if token is expired
     if (new Date() > storedRefreshToken.expiresAt) {
       // Delete expired token
-      await this.authRepository.deleteRefreshToken(refreshToken);
+      await this.authRepository.deleteRefreshById(storedRefreshToken.id);
       throw new UnauthorizedException('Refresh token expired');
     }
 
@@ -96,7 +99,7 @@ export class AuthService {
     }
 
     // Delete old refresh token
-    await this.authRepository.deleteRefreshToken(refreshToken);
+    await this.authRepository.deleteRefreshById(storedRefreshToken.id);
 
     // Generate new tokens
     const tokens = await this.generateTokens(user.id, user.email, user.role);
@@ -113,11 +116,15 @@ export class AuthService {
    * @param refreshToken Refresh token
    */
   async logout(userId: string, refreshToken: string): Promise<void> {
+    // Normalize token by trimming whitespace
+    const normalizedToken = refreshToken.trim();
+
     // Find refresh token in database
     const storedRefreshToken =
-      await this.authRepository.findRefreshTokenByToken(refreshToken);
+      await this.authRepository.findRefreshTokenByToken(normalizedToken);
 
     if (!storedRefreshToken) {
+      // Token doesn't exist, nothing to do
       return;
     }
 
@@ -127,7 +134,7 @@ export class AuthService {
     }
 
     // Delete refresh token
-    await this.authRepository.deleteRefreshToken(refreshToken);
+    await this.authRepository.deleteRefreshToken(normalizedToken);
   }
 
   /**
