@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { RefreshToken } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
+import {
+  excludeDeleted,
+  softDeleteData,
+} from '../../../common/utils/soft-delete.util';
 
 @Injectable()
 export class AuthRepository {
@@ -33,10 +37,8 @@ export class AuthRepository {
    * @returns The refresh token or null if not found
    */
   async findRefreshTokenByToken(token: string): Promise<RefreshToken | null> {
-    return this.prisma.refreshToken.findUnique({
-      where: {
-        token,
-      },
+    return this.prisma.refreshToken.findFirst({
+      where: excludeDeleted({ token }),
       include: {
         user: true,
       },
@@ -44,39 +46,37 @@ export class AuthRepository {
   }
 
   /**
-   * Deletes a refresh token by its token value
+   * Soft deletes a refresh token by its token value
    * @param token The refresh token to delete
-   * @returns The deleted refresh token or null if not found
+   * @returns The soft-deleted refresh token or null if not found
    */
   async deleteRefreshToken(token: string): Promise<RefreshToken | null> {
     try {
-      return await this.prisma.refreshToken.delete({
-        where: {
-          token,
-        },
-      });
-    } catch (error) {
-      // Check if it's a Prisma error with code P2025 (record not found)
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        error.code === 'P2025'
-      ) {
-        // Record to delete does not exist
-        console.log(`Refresh token not found: ${token}`);
+      const refreshToken = await this.findRefreshTokenByToken(token);
+      if (!refreshToken) {
         return null;
       }
-      throw error;
+      return await this.prisma.refreshToken.update({
+        where: { token },
+        data: softDeleteData(),
+      });
+    } catch {
+      // Log error but don't expose details
+      console.log(`Error soft-deleting refresh token: ${token}`);
+      return null;
     }
   }
 
+  /**
+   * Soft deletes a refresh token by its ID
+   * @param id The ID of the refresh token to delete
+   * @returns The soft-deleted refresh token or null if not found
+   */
   async deleteRefreshById(id: string): Promise<RefreshToken | null> {
     try {
-      return await this.prisma.refreshToken.delete({
-        where: {
-          id,
-        },
+      return await this.prisma.refreshToken.update({
+        where: { id },
+        data: softDeleteData(),
       });
     } catch (error) {
       console.error(error);
@@ -86,17 +86,22 @@ export class AuthRepository {
   }
 
   /**
-   * Deletes all refresh tokens for a user
+   * Soft deletes all refresh tokens for a user
    * @param userId The ID of the user
-   * @returns The count of deleted tokens
+   * @returns The count of soft-deleted tokens
    */
   async deleteAllUserRefreshTokens(userId: string): Promise<{ count: number }> {
-    const result = await this.prisma.refreshToken.deleteMany({
-      where: {
-        userId,
-      },
+    const refreshTokens = await this.prisma.refreshToken.findMany({
+      where: excludeDeleted({ userId }),
     });
-
-    return { count: result.count };
+    let count = 0;
+    for (const token of refreshTokens) {
+      await this.prisma.refreshToken.update({
+        where: { id: token.id },
+        data: softDeleteData(),
+      });
+      count++;
+    }
+    return { count };
   }
 }

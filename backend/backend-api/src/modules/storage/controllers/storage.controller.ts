@@ -7,33 +7,16 @@ import {
   Get,
   HttpStatus,
   InternalServerErrorException,
-  Inject,
   Logger,
   NotFoundException,
   Param,
   Post,
-  Query,
-  Req,
   Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Request, Response } from 'express';
-import { OrganizationsService } from '../../organizations/services/organizations.service';
-import { OrganizationEmployeeRetinasDto } from '../dto/organization-employee-retinas.dto';
-import { RetinaImageDto } from '../dto/retina-image.dto';
-import { ValidateRetinaImageDto } from '../dto/validate-retina-image.dto';
-import { BlobStorageService } from '../services/blob-storage.service';
-import { RetinaImageRepository } from '../repositories/retina-image.repository';
-import {
-  ServiceBusService,
-  RetinaValidationCommand,
-} from '../services/service-bus.service';
-import { ValidationReceiverService } from '../services/validation-receiver.service';
-import { v4 as uuidv4 } from 'uuid';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -42,12 +25,25 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { UserRole } from '@prisma/client';
+import { Response } from 'express';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { User } from 'src/modules/users/interfaces/user.interface';
-import { UserRole } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
+import { OrganizationsService } from '../../organizations/services/organizations.service';
+import { OrganizationEmployeeRetinasDto } from '../dto/organization-employee-retinas.dto';
+import { RetinaImageDto } from '../dto/retina-image.dto';
+import { ValidateRetinaImageDto } from '../dto/validate-retina-image.dto';
+import { RetinaImageRepository } from '../repositories/retina-image.repository';
+import { BlobStorageService } from '../services/blob-storage.service';
+import {
+  RetinaValidationCommand,
+  ServiceBusService,
+} from '../services/service-bus.service';
+import { ValidationReceiverService } from '../services/validation-receiver.service';
 
 /**
  * Interface for uploaded file to ensure type safety
@@ -407,7 +403,7 @@ export class StorageController {
       // const user = this.request['user'];
 
       // Determine the organization ID
-      let organizationId = validateDto.organizationId;
+      const organizationId = validateDto.organizationId;
 
       // If the user is not a super admin and an organization ID is provided, verify access
       if (user && organizationId) {

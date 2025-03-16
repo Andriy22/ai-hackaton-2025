@@ -190,7 +190,7 @@ export class OrganizationsController {
     description: 'Invalid input data',
   })
   @Put(':id')
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN)
   async updateOrganization(
     @Param('id') id: string,
     @Body() updateOrganizationDto: UpdateOrganizationDto,
@@ -353,7 +353,7 @@ export class OrganizationsController {
    * @param id - Organization ID
    * @param userId - User ID to remove
    * @param user - Current authenticated user
-   * @returns The updated user
+   * @returns The updated user without password
    */
   @ApiOperation({ summary: 'Remove a user from an organization' })
   @ApiParam({
@@ -384,7 +384,7 @@ export class OrganizationsController {
     @Param('id') id: string,
     @Param('userId') userId: string,
     @GetUser() user: User,
-  ): Promise<User> {
+  ): Promise<Omit<User, 'password'>> {
     // Check if user has access to this organization
     if (user.role !== UserRole.SUPER_ADMIN) {
       const isUserInOrganization =

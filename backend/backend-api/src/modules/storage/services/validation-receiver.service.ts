@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-misused-promises */
-/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
+
 import {
   ServiceBusClient,
   ServiceBusReceivedMessage,
@@ -21,8 +21,20 @@ export interface RetinaValidationResponse {
   status: string;
   matchingEmployeeId: string | null;
   similarity: number;
-  messageId: string;
+  messageId?: string;
   originatingInstance?: string;
+}
+
+/**
+ * Type for message body to ensure type safety
+ */
+interface MessageBody {
+  status?: string;
+  matchingEmployeeId?: string | null;
+  similarity?: number;
+  messageId?: string;
+  response?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 /**
@@ -36,26 +48,17 @@ export class ValidationReceiverService
   private readonly serviceBusClient: ServiceBusClient | null = null;
   private readonly validationResponseQueueName: string;
   private receiver: ServiceBusReceiver | null = null;
-  private readonly validationResponses = new Map<
-    string,
-    RetinaValidationResponse
-  >();
   private isProcessing = false;
-  private instanceId: string;
-  private processedMessageIds = new Set<string>();
   private readonly port: string;
+  private isListening = false;
 
   /**
    * Constructor for ValidationReceiverService
    * @param eventEmitter - Event emitter for publishing validation responses
    */
   constructor(private readonly eventEmitter: EventEmitter2) {
-    // Generate a unique instance ID that includes the port number for traceability
     this.port = process.env.PORT || '3000';
-    this.instanceId = `validation-instance-port-${this.port}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    this.logger.log(
-      `Validation Receiver instance ID: ${this.instanceId} on port ${this.port}`,
-    );
+    this.logger.log(`Validation Receiver initialized on port ${this.port}`);
 
     try {
       const connectionString = process.env.AZURE_SERVICE_BUS_CONNECTION_STRING;
@@ -102,6 +105,7 @@ export class ValidationReceiverService
 
   /**
    * Start the service bus receiver to process validation response messages
+   * This will set up a continuous listener that doesn't need to be recreated
    */
   private async startReceiver(): Promise<void> {
     if (!this.serviceBusClient) {
@@ -111,9 +115,15 @@ export class ValidationReceiverService
       return;
     }
 
+    // Don't start if already listening
+    if (this.isListening) {
+      this.logger.log('Receiver is already listening for messages');
+      return;
+    }
+
     try {
       this.logger.log(
-        `Attempting to connect to validation response queue: ${this.validationResponseQueueName}`,
+        `Connecting to validation response queue: ${this.validationResponseQueueName}`,
       );
 
       // Close any existing receiver to ensure a clean start
@@ -135,23 +145,45 @@ export class ValidationReceiverService
 
       // Subscribe to messages with more detailed logging
       this.receiver.subscribe({
-        processMessage: async (message) => {
+        processMessage: async (message: ServiceBusReceivedMessage) => {
+          this.logger.log('Message received from service bus queue');
           await this.handleMessage(message);
         },
-        processError: async (error) => {
+        processError: async (error: unknown) => {
           this.logger.error(
-            `Error processing validation message: ${JSON.stringify(error)}`,
+            `Error processing validation message: ${
+              error instanceof Error ? error.message : JSON.stringify(error)
+            }`,
           );
+
+          // Only attempt to restart if we were previously listening
+          if (this.isListening) {
+            this.isListening = false;
+
+            // Attempt to restart the receiver after a delay if there's an error
+            setTimeout(() => {
+              this.logger.log('Attempting to restart the receiver after error');
+              this.startReceiver().catch((e: unknown) => {
+                this.logger.error(
+                  `Failed to restart receiver: ${
+                    e instanceof Error ? e.message : String(e)
+                  }`,
+                );
+              });
+            }, 5000);
+          }
         },
       });
 
+      this.isListening = true;
       this.logger.log(
-        `Started listening for validation messages on queue: ${this.validationResponseQueueName}`,
+        `Started continuous listener for validation messages on queue: ${this.validationResponseQueueName}`,
       );
 
       // Perform an initial check for messages in the queue
       await this.checkForExistingMessages();
     } catch (error: unknown) {
+      this.isListening = false;
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
@@ -173,7 +205,10 @@ export class ValidationReceiverService
    * This helps process messages that might have been sent before the receiver was started
    */
   private async checkForExistingMessages(): Promise<void> {
-    if (!this.serviceBusClient || !this.receiver) {
+    if (!this.serviceBusClient) {
+      this.logger.warn(
+        'Cannot check for existing messages - client not initialized',
+      );
       return;
     }
 
@@ -182,22 +217,50 @@ export class ValidationReceiverService
         `Checking for existing messages in validation queue: ${this.validationResponseQueueName}`,
       );
 
+      // Create a temporary receiver if the main one isn't available
+      const tempReceiver = !this.receiver
+        ? this.serviceBusClient.createReceiver(
+            this.validationResponseQueueName,
+            { receiveMode: 'peekLock' },
+          )
+        : this.receiver;
+
       // Peek at messages in the queue
-      const messages = await this.receiver.peekMessages(10);
+      const messages = await tempReceiver.peekMessages(20);
 
       if (messages.length > 0) {
         this.logger.log(
           `Found ${messages.length} existing validation messages in the queue`,
         );
 
-        // Log details about the messages
-        messages.forEach((message, index) => {
+        // Process each message
+        for (const [index, message] of messages.entries()) {
           this.logger.log(
-            `Validation message ${index + 1} - ID: ${message.messageId || 'unknown'}, EnqueuedTime: ${message.enqueuedTimeUtc}`,
+            `Processing validation message ${index + 1}, EnqueuedTime: ${message.enqueuedTimeUtc}`,
           );
-        });
+
+          // Process the message directly if it has a valid body
+          if (message.body && typeof message.body === 'object') {
+            try {
+              await this.processValidationResponse(message);
+            } catch (processError) {
+              this.logger.error(
+                `Error processing peeked message: ${
+                  processError instanceof Error
+                    ? processError.message
+                    : JSON.stringify(processError)
+                }`,
+              );
+            }
+          }
+        }
       } else {
         this.logger.log('No existing validation messages found in the queue');
+      }
+
+      // Close the temporary receiver if we created one
+      if (tempReceiver !== this.receiver) {
+        await tempReceiver.close();
       }
     } catch (error) {
       const errorMessage =
@@ -205,103 +268,58 @@ export class ValidationReceiverService
       this.logger.error(
         `Failed to check for existing validation messages: ${errorMessage}`,
       );
+
+      // Log stack trace if available
+      if (error instanceof Error && error.stack) {
+        this.logger.error(`Stack trace: ${error.stack}`);
+      }
     }
   }
 
   /**
-   * Handle an incoming message with distributed processing protection
+   * Handle an incoming message
    * @param message - The received message
    */
-  private async handleMessage(
-    message: ServiceBusReceivedMessage,
-  ): Promise<void> {
-    const messageId = message.messageId || 'unknown';
-
-    // Check if this message has application properties with routing information
-    const originatingInstance = message.applicationProperties
-      ?.originatingInstance as string;
-    const originatingPort = message.applicationProperties
-      ?.originatingPort as string;
-
-    // Check if the message was intended for a specific instance
-    if (originatingInstance && originatingInstance !== this.instanceId) {
-      // This message was intended for another instance
-      this.logger.log(
-        `Message ${messageId} was intended for instance ${originatingInstance} on port ${originatingPort || 'unknown'}, ` +
-          `but received by instance ${this.instanceId} on port ${this.port}. ` +
-          `Will process anyway but log the mismatch.`,
-      );
-
-      // We'll still process it, but we've logged the mismatch for debugging
-    }
-
-    // Check if we've already processed this message
-    if (this.processedMessageIds.has(messageId.toString())) {
-      this.logger.log(
-        `Validation message ${messageId} already processed by this instance, skipping`,
-      );
-      try {
-        await this.receiver?.completeMessage(message);
-      } catch (completeError) {
-        this.logger.error(
-          `Failed to complete already processed message: ${JSON.stringify(completeError)}`,
-        );
-      }
+  async handleMessage(message: ServiceBusReceivedMessage): Promise<void> {
+    if (!this.receiver) {
+      this.logger.error('Cannot handle message - receiver not initialized');
       return;
     }
 
     // Check if we're already processing a message
     if (this.isProcessing) {
-      this.logger.log(
-        `Validation instance ${this.instanceId} is busy, deferring message ${messageId}`,
+      this.logger.warn(
+        `Already processing a message. Will abandon message to allow retry.`,
       );
-      try {
-        // Defer the message to be processed later
-        await this.receiver?.deferMessage(message);
-        this.logger.log(
-          `Deferred validation message ${messageId} for later processing`,
-        );
-      } catch (deferError) {
-        this.logger.error(
-          `Failed to defer validation message: ${JSON.stringify(deferError)}`,
-        );
-      }
+      await this.receiver.abandonMessage(message);
       return;
     }
 
-    try {
-      // Set processing flag to prevent concurrent processing
-      this.isProcessing = true;
-      this.logger.log(
-        `Processing validation message ${messageId} on instance ${this.instanceId}`,
-      );
+    // Set processing flag
+    this.isProcessing = true;
 
+    try {
       // Process the message
       await this.processValidationResponse(message);
+      // Complete the message to remove it from the queue
+      await this.receiver.completeMessage(message);
+      this.logger.log('Message processed and completed');
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(`Error processing message: ${errorMessage}`);
 
-      // Mark as processed
-      this.processedMessageIds.add(messageId.toString());
-
-      // Limit the size of the processed set to avoid memory leaks
-      if (this.processedMessageIds.size > 1000) {
-        // Remove the oldest entries
-        const entriesToRemove = this.processedMessageIds.size - 1000;
-        const iterator = this.processedMessageIds.values();
-        for (let i = 0; i < entriesToRemove; i++) {
-          const value = iterator.next().value;
-          if (typeof value === 'string') {
-            this.processedMessageIds.delete(value);
-          }
-        }
-      }
-
-      // Complete the message
+      // Abandon the message so it can be retried
       try {
-        await this.receiver?.completeMessage(message);
-        this.logger.log(`Completed validation message ${messageId}`);
-      } catch (completeError) {
+        this.logger.log('Abandoning message due to error');
+        await this.receiver.abandonMessage(message);
+      } catch (abandonError) {
         this.logger.error(
-          `Failed to complete validation message: ${JSON.stringify(completeError)}`,
+          `Failed to abandon message: ${
+            abandonError instanceof Error
+              ? abandonError.message
+              : String(abandonError)
+          }`,
         );
       }
     } finally {
@@ -318,61 +336,119 @@ export class ValidationReceiverService
     message: ServiceBusReceivedMessage,
   ): Promise<void> {
     try {
-      const response = message.body as RetinaValidationResponse;
-      const messageId = response.messageId;
-
-      // Get the originating instance from application properties
-      const originatingInstance = message.applicationProperties
-        ?.originatingInstance as string;
-      const originatingPort = message.applicationProperties
-        ?.originatingPort as string;
-
-      // Add the originating instance to the response if available
-      if (originatingInstance) {
-        response.originatingInstance = originatingInstance;
-      }
-
-      this.logger.log(
-        `Received validation response message for messageId ${messageId}` +
-          (originatingInstance
-            ? ` from instance ${originatingInstance} on port ${originatingPort || 'unknown'}`
-            : ''),
-      );
-
-      if (response.status === 'success' && messageId) {
-        // Store the response and emit an event
-        this.validationResponses.set(messageId, response);
-        this.eventEmitter.emit('validation.response', response);
-
-        this.logger.log(
-          `Processed validation response for messageId ${messageId}` +
-            (originatingInstance
-              ? ` from instance ${originatingInstance}`
-              : ''),
-        );
-      } else {
+      const body = message.body as MessageBody | null;
+      if (!body || typeof body !== 'object') {
         this.logger.warn(
-          `Invalid validation response message format or status: ${JSON.stringify(response)}`,
+          `Invalid message body format: ${JSON.stringify(body)}`,
         );
+        return;
       }
+
+      // Extract message ID if available (for correlation purposes)
+      const messageId =
+        typeof message.messageId === 'string'
+          ? message.messageId
+          : typeof body === 'object' &&
+              'messageId' in body &&
+              typeof body.messageId === 'string'
+            ? body.messageId
+            : '';
+
+      // Create a properly typed response object
+      let response: RetinaValidationResponse;
+
+      // Handle different message formats that might come from the queue
+      if ('status' in body) {
+        // Standard format where status is directly in the body
+        response = {
+          status: body.status || 'success',
+          matchingEmployeeId: body.matchingEmployeeId || null,
+          similarity: typeof body.similarity === 'number' ? body.similarity : 0,
+        };
+      } else if (
+        typeof body === 'object' &&
+        'response' in body &&
+        typeof body.response === 'object'
+      ) {
+        // Handle nested response format
+        this.logger.log(
+          `Found nested response format: ${JSON.stringify(body)}`,
+        );
+        const nestedResponse = body.response || {};
+
+        response = {
+          status:
+            typeof nestedResponse.status === 'string'
+              ? nestedResponse.status
+              : 'success',
+          matchingEmployeeId:
+            typeof nestedResponse.matchingEmployeeId === 'string'
+              ? nestedResponse.matchingEmployeeId
+              : null,
+          similarity:
+            typeof nestedResponse.similarity === 'number'
+              ? nestedResponse.similarity
+              : 0,
+        };
+      } else {
+        // Try to extract data from the message if it doesn't match expected formats
+        this.logger.warn(
+          `Unexpected message format, attempting to extract data: ${JSON.stringify(
+            body,
+          )}`,
+        );
+
+        // Create a response with available data
+        response = {
+          status: 'success',
+          matchingEmployeeId: null,
+          similarity: 0,
+        };
+
+        // Try to extract data from various possible formats
+        if (typeof body === 'object') {
+          if ('status' in body && typeof body.status === 'string') {
+            response.status = body.status;
+          }
+
+          if ('matchingEmployeeId' in body) {
+            response.matchingEmployeeId =
+              typeof body.matchingEmployeeId === 'string'
+                ? body.matchingEmployeeId
+                : null;
+          }
+
+          if ('similarity' in body && typeof body.similarity === 'number') {
+            response.similarity = body.similarity;
+          }
+        }
+      }
+
+      // Add the message ID to the response for correlation
+      if (messageId) {
+        response.messageId = messageId;
+      }
+
+      // Log the full response object
+      this.logger.log(`Event response content: ${JSON.stringify(response)}`);
+
+      // Emit an event for all responses immediately
+      this.logger.log('Emitting validation.response event');
+      this.eventEmitter.emit('validation.response', response);
+
+      this.logger.log('Processed validation response');
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
         `Failed to process validation response message: ${errorMessage}`,
       );
-    }
-  }
 
-  /**
-   * Get a validation response by message ID
-   * @param messageId - Message ID to get the response for
-   * @returns The validation response or null if not found
-   */
-  getValidationResponse(
-    messageId: string,
-  ): RetinaValidationResponse | undefined {
-    return this.validationResponses.get(messageId);
+      // Log the stack trace if available
+      if (error instanceof Error && error.stack) {
+        this.logger.error(`Stack trace: ${error.stack}`);
+      }
+    }
   }
 
   /**
@@ -385,13 +461,17 @@ export class ValidationReceiverService
     messageId: string,
     timeoutMs = 30000,
   ): Promise<RetinaValidationResponse | null> {
-    // Check if we already have the response
-    const existingResponse = this.validationResponses.get(messageId);
-    if (existingResponse) {
-      return existingResponse;
+    this.logger.log(
+      `Waiting for validation response for messageId: ${messageId}`,
+    );
+
+    // Ensure the receiver is started
+    if (!this.isListening) {
+      this.logger.log('Receiver not listening, starting receiver');
+      await this.startReceiver();
     }
 
-    // Wait for the response with a timeout
+    // Wait for any response with a timeout
     return new Promise<RetinaValidationResponse | null>((resolve) => {
       const timeoutId = setTimeout(() => {
         // Remove the listener and resolve with null if timeout
@@ -399,24 +479,35 @@ export class ValidationReceiverService
           'validation.response',
           responseHandler,
         );
+        this.logger.warn(
+          `Timeout waiting for validation response for messageId: ${messageId}`,
+        );
         resolve(null);
       }, timeoutMs);
 
       // Handler for the validation response event
       const responseHandler = (response: RetinaValidationResponse) => {
+        // Check if this response is for our message ID
         if (response.messageId === messageId) {
-          // Clear the timeout and resolve with the response
           clearTimeout(timeoutId);
           this.eventEmitter.removeListener(
             'validation.response',
             responseHandler,
           );
+          this.logger.log(
+            `Received matching validation response for messageId: ${messageId}`,
+          );
           resolve(response);
+        } else {
+          this.logger.log(
+            `Received non-matching validation response, expected: ${messageId}, got: ${response.messageId || 'undefined'}`,
+          );
         }
       };
 
       // Listen for the validation response event
       this.eventEmitter.on('validation.response', responseHandler);
+      this.logger.log(`Event listener registered for validation responses`);
     });
   }
 
@@ -425,6 +516,8 @@ export class ValidationReceiverService
    */
   async close(): Promise<void> {
     try {
+      this.isListening = false;
+
       if (this.receiver) {
         await this.receiver.close();
         this.logger.log('Validation Service Bus receiver closed successfully');

@@ -317,7 +317,7 @@ export class BlobStorageService {
       const response = await blockBlobClient.deleteIfExists();
 
       if (response.succeeded) {
-        // Delete from database
+        // Soft delete from database
         await this.retinaImageRepository.delete(retinaImageId);
       }
 

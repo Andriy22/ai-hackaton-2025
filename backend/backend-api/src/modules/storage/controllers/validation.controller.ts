@@ -1,7 +1,9 @@
+import { HttpService } from '@nestjs/axios';
 import {
   Body,
   Controller,
   ForbiddenException,
+  Injectable,
   InternalServerErrorException,
   Logger,
   Post,
@@ -11,27 +13,35 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiOperation,
   ApiResponse,
   ApiTags,
-  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { AxiosError } from 'axios';
+import { catchError, firstValueFrom, throwError } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
+import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
-import { Roles } from '../../auth/decorators/roles.decorator';
-import { UserRole } from '../../users/enums/user-role.enum';
 import { OrganizationsService } from '../../organizations/services/organizations.service';
+import { UserRole } from '../../users/enums/user-role.enum';
 import { ValidateRetinaImageDto } from '../dto/validate-retina-image.dto';
 import { RetinaImageRepository } from '../repositories/retina-image.repository';
 import { BlobStorageService } from '../services/blob-storage.service';
-import {
-  RetinaValidationCommand,
-  ServiceBusService,
-} from '../services/service-bus.service';
 import { ValidationReceiverService } from '../services/validation-receiver.service';
+
+/**
+ * Interface for uploaded file
+ */
+interface UploadedFileData {
+  buffer: Buffer;
+  originalname: string;
+  mimetype: string;
+  [key: string]: unknown;
+}
 
 /**
  * Interface for validation response
@@ -44,29 +54,55 @@ interface ValidationResponse {
 }
 
 /**
+ * Interface for retina validation request
+ */
+interface RetinaValidationRequest {
+  image_path: string;
+  employees: Array<{
+    employeeId: string;
+    documentId: string;
+  }>;
+  messageId: string;
+  originatingInstance?: string;
+}
+
+/**
+ * Interface for retina validation API response
+ */
+interface RetinaValidationApiResponse {
+  status: string;
+  matchingEmployeeId: string | null;
+  similarity: number;
+  messageId: string;
+}
+
+/**
  * Controller for retina image validation operations
  */
 @ApiTags('Validation')
 @Controller('validation')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Injectable()
 export class ValidationController {
   private readonly logger = new Logger(ValidationController.name);
+  private readonly retinaAnalyzerApiUrl =
+    'https://lumina-secure-retina-analyzer-etf9h4g3dwawamh5.westeurope-01.azurewebsites.net/validate';
 
   /**
    * Constructor for ValidationController
    * @param blobStorageService - Service for interacting with blob storage
    * @param retinaImageRepository - Repository for retina image operations
-   * @param serviceBusService - Service for interacting with service bus
    * @param validationReceiverService - Service for receiving validation responses
    * @param organizationsService - Service for organization operations
+   * @param httpService - HTTP service for making API requests
    */
   constructor(
     private readonly blobStorageService: BlobStorageService,
     private readonly retinaImageRepository: RetinaImageRepository,
-    private readonly serviceBusService: ServiceBusService,
     private readonly validationReceiverService: ValidationReceiverService,
     private readonly organizationsService: OrganizationsService,
+    private readonly httpService: HttpService,
   ) {}
 
   /**
@@ -115,7 +151,7 @@ export class ValidationController {
   @Roles(UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN, UserRole.VALIDATOR)
   @UseInterceptors(FileInterceptor('file'))
   async validateRetinaImage(
-    @UploadedFile() file: any,
+    @UploadedFile() file: UploadedFileData,
     @Body() validateDto: ValidateRetinaImageDto,
   ): Promise<ValidationResponse> {
     try {
@@ -164,53 +200,104 @@ export class ValidationController {
       // Create a unique message ID for this validation request
       const messageId = uuidv4();
 
-      // Prepare the validation command
-      const validationCommand: RetinaValidationCommand = {
+      // Prepare the validation request
+      const validationRequest: RetinaValidationRequest = {
         image_path: uploadResult.path,
         employees: employees.map((emp) => ({
           employeeId: emp.employeeId,
           documentId: emp.documentId || '',
         })),
         messageId,
+        originatingInstance: process.env.INSTANCE_NAME || 'backend-api',
       };
 
-      // Send the command to the service bus
-      const sendResult =
-        await this.serviceBusService.sendRetinaValidationCommand(
-          validationCommand,
-        );
+      // Send HTTP request to the retina analyzer API
+      this.logger.log(
+        `Sending validation request to retina analyzer API: ${JSON.stringify(
+          validationRequest,
+        )}`,
+      );
 
-      if (!sendResult) {
-        throw new InternalServerErrorException(
-          'Failed to send validation command to service bus',
-        );
-      }
+      try {
+        // Send the validation request to the retina analyzer API
+        const response = await this.sendValidationRequest(validationRequest);
 
-      // Wait for the validation response
-      const validationResponse =
-        await this.validationReceiverService.waitForValidationResponse(
-          messageId,
-        );
+        // Return the validation result
+        return response;
+      } catch (apiError: unknown) {
+        const errorMessage =
+          apiError instanceof Error ? apiError.message : 'Unknown API error';
+        this.logger.error(`Error calling retina analyzer API: ${errorMessage}`);
 
-      if (!validationResponse) {
         return {
           status: 'error',
-          message: 'Validation timed out. Please try again later.',
+          message: 'Failed to validate retina image. Please try again later.',
+        };
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error validating retina image: ${errorMessage}`);
+
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to validate retina image');
+    }
+  }
+
+  /**
+   * Send a validation request to the retina analyzer API
+   * @param validationRequest - The request data to send
+   * @returns The validation response
+   */
+  private async sendValidationRequest(
+    validationRequest: RetinaValidationRequest,
+  ): Promise<ValidationResponse> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService
+          .post<RetinaValidationApiResponse>(
+            this.retinaAnalyzerApiUrl,
+            validationRequest,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              timeout: 30000, // 30 seconds timeout
+            },
+          )
+          .pipe(
+            catchError((error: AxiosError) => {
+              this.logger.error(`HTTP request error: ${error.message}`);
+              return throwError(
+                () => new Error(`API request failed: ${error.message}`),
+              );
+            }),
+          ),
+      );
+
+      if (!response || !response.data) {
+        this.logger.error('No response received from retina analyzer API');
+        return {
+          status: 'error',
+          message: 'Failed to get validation result. Please try again later.',
         };
       }
 
-      // Return the validation result
+      const validationResponse = response.data;
+      this.logger.log(
+        `Received validation response: ${JSON.stringify(validationResponse)}`,
+      );
+
       return {
         status: validationResponse.status,
         matchingEmployeeId: validationResponse.matchingEmployeeId,
         similarity: validationResponse.similarity,
       };
     } catch (error) {
-      this.logger.error(`Error validating retina image: ${error.message}`);
-      if (error instanceof ForbiddenException) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Failed to validate retina image');
+      this.logger.error(`Error in sendValidationRequest: ${error.message}`);
+      throw error;
     }
   }
 }

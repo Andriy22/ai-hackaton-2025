@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Organization, User, UserRole, Employee } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
+import {
+  excludeDeleted,
+  softDeleteData,
+} from '../../../common/utils/soft-delete.util';
 import { CreateOrganizationDto } from '../dto/create-organization.dto';
 import { UpdateOrganizationDto } from '../dto/update-organization.dto';
 import { CreateEmployeeDto } from '../dto/create-employee.dto';
@@ -43,7 +47,7 @@ export class OrganizationsRepository {
     return this.prisma.organization.findMany({
       skip: options?.skip,
       take: options?.take,
-      where: options?.where,
+      where: excludeDeleted(options?.where),
       include: {
         _count: {
           select: {
@@ -61,8 +65,8 @@ export class OrganizationsRepository {
    * @returns The organization with the specified ID or null if not found
    */
   async findById(id: string): Promise<Organization | null> {
-    return this.prisma.organization.findUnique({
-      where: { id },
+    return this.prisma.organization.findFirst({
+      where: excludeDeleted({ id }),
       include: {
         _count: {
           select: {
@@ -81,7 +85,7 @@ export class OrganizationsRepository {
    */
   async findByName(name: string): Promise<Organization | null> {
     return this.prisma.organization.findFirst({
-      where: { name },
+      where: excludeDeleted({ name }),
     });
   }
 
@@ -99,13 +103,14 @@ export class OrganizationsRepository {
   }
 
   /**
-   * Delete an organization
+   * Soft delete an organization
    * @param id - Organization ID
-   * @returns The deleted organization
+   * @returns The soft-deleted organization
    */
   async delete(id: string): Promise<Organization> {
-    return this.prisma.organization.delete({
+    return this.prisma.organization.update({
       where: { id },
+      data: softDeleteData(),
     });
   }
 
@@ -116,7 +121,7 @@ export class OrganizationsRepository {
    */
   async count(where?: { name?: string }): Promise<number> {
     return this.prisma.organization.count({
-      where,
+      where: excludeDeleted(where),
     });
   }
 
@@ -129,14 +134,15 @@ export class OrganizationsRepository {
   async checkUserOrganization(id: string, userId: string): Promise<boolean> {
     return (
       (await this.prisma.organization.findFirst({
-        where: {
+        where: excludeDeleted({
           id,
           users: {
             some: {
               id: userId,
+              deleted: false,
             },
           },
-        },
+        }),
       })) !== null
     );
   }
@@ -155,9 +161,9 @@ export class OrganizationsRepository {
     },
   ) {
     return this.prisma.user.findMany({
-      where: {
+      where: excludeDeleted({
         organizationId,
-      },
+      }),
       select: {
         id: true,
         firstName: true,
@@ -179,9 +185,9 @@ export class OrganizationsRepository {
    */
   async countOrganizationUsers(organizationId: string): Promise<number> {
     return this.prisma.user.count({
-      where: {
+      where: excludeDeleted({
         organizationId,
-      },
+      }),
     });
   }
 
@@ -268,7 +274,7 @@ export class OrganizationsRepository {
     },
   ): Promise<Employee[]> {
     return this.prisma.employee.findMany({
-      where: { organizationId },
+      where: excludeDeleted({ organizationId }),
       skip: options?.skip,
       take: options?.take,
       orderBy: {
@@ -284,7 +290,7 @@ export class OrganizationsRepository {
    */
   async countOrganizationEmployees(organizationId: string): Promise<number> {
     return this.prisma.employee.count({
-      where: { organizationId },
+      where: excludeDeleted({ organizationId }),
     });
   }
 
@@ -294,8 +300,8 @@ export class OrganizationsRepository {
    * @returns The employee
    */
   async getEmployeeById(employeeId: string): Promise<Employee | null> {
-    return this.prisma.employee.findUnique({
-      where: { id: employeeId },
+    return this.prisma.employee.findFirst({
+      where: excludeDeleted({ id: employeeId }),
     });
   }
 
@@ -334,13 +340,14 @@ export class OrganizationsRepository {
   }
 
   /**
-   * Delete an employee
+   * Soft delete an employee
    * @param employeeId - Employee ID
-   * @returns The deleted employee
+   * @returns The soft-deleted employee
    */
   async deleteEmployee(employeeId: string): Promise<Employee> {
-    return this.prisma.employee.delete({
+    return this.prisma.employee.update({
       where: { id: employeeId },
+      data: softDeleteData(),
     });
   }
 }
