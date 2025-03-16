@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
 import { formatDate } from '@/lib/utils';
 import { Organization } from '../types/types';
 import { Edit, Eye, Trash, Users, UserRound } from 'lucide-react';
@@ -8,94 +8,127 @@ interface OrganizationRowProps {
   onViewDetails: (id: string) => void;
   onEdit: (org: Organization) => void;
   onDelete: (id: string) => void;
+  index: number;
 }
 
 const OrganizationRow = ({ 
   organization, 
   onViewDetails, 
   onEdit, 
-  onDelete 
-}: OrganizationRowProps) => (
-  <tr 
-    className="cursor-pointer hover:bg-gray-50"
-    onClick={() => onViewDetails(organization.id)}
-    tabIndex={0}
-    onKeyDown={(e) => e.key === 'Enter' && onViewDetails(organization.id)}
-  >
-    <td className="whitespace-nowrap px-6 py-4">
-      <div className="text-sm font-medium text-gray-900">
-        {organization.name}
-      </div>
-    </td>
-    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-      {formatDate(organization.createdAt)}
-    </td>
-    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-      {formatDate(organization.updatedAt)}
-    </td>
-    <td className="whitespace-nowrap px-6 py-4 text-center">
-      <div className="flex items-center justify-center">
-        <Users className="mr-1 h-4 w-4 text-blue-500" />
-        <span className="text-sm font-medium">{organization._count?.users || 0}</span>
-      </div>
-    </td>
-    <td className="whitespace-nowrap px-6 py-4 text-center">
-      <div className="flex items-center justify-center">
-        <UserRound className="mr-1 h-4 w-4 text-green-500" />
-        <span className="text-sm font-medium">{organization._count?.employees || 0}</span>
-      </div>
-    </td>
-    <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-      <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewDetails(organization.id);
-          }}
-          className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-          aria-label={`View details of ${organization.name}`}
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
+  onDelete,
+  index
+}: OrganizationRowProps) => {
+  // Animation variants
+  const rowVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 24,
+        delay: index * 0.05
+      }
+    },
+    hover: { 
+      backgroundColor: "rgba(243, 244, 246, 0.5)",
+      transition: { duration: 0.2 }
+    }
+  };
+
+  return (
+    <motion.tr 
+      variants={rowVariants}
+      whileHover="hover"
+      className="cursor-pointer bg-white transition-colors"
+      onClick={() => onViewDetails(organization.id)}
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onViewDetails(organization.id)}
+    >
+      <td className="whitespace-nowrap px-6 py-4">
+        <div className="text-sm font-medium text-gray-900">
+          {organization.name}
+        </div>
+      </td>
+      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+        {formatDate(organization.createdAt)}
+      </td>
+      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+        {formatDate(organization.updatedAt)}
+      </td>
+      <td className="whitespace-nowrap px-6 py-4 text-center">
+        <div className="flex items-center justify-center">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50">
+            <Users className="h-4 w-4 text-blue-500" />
+          </div>
+          <span className="ml-2 text-sm font-medium">{organization._count?.users || 0}</span>
+        </div>
+      </td>
+      <td className="whitespace-nowrap px-6 py-4 text-center">
+        <div className="flex items-center justify-center">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-green-50">
+            <UserRound className="h-4 w-4 text-green-500" />
+          </div>
+          <span className="ml-2 text-sm font-medium">{organization._count?.employees || 0}</span>
+        </div>
+      </td>
+      <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+        <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
+          <motion.button
+            onClick={(e) => {
               e.stopPropagation();
               onViewDetails(organization.id);
-            }
-          }}
-        >
-          <Eye className="h-5 w-5" />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(organization);
-          }}
-          className="rounded p-1 text-blue-500 hover:bg-blue-100 hover:text-blue-700"
-          aria-label={`Edit ${organization.name}`}
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
+            }}
+            whileHover={{ scale: 1.1, backgroundColor: "#EEF2FF" }}
+            whileTap={{ scale: 0.95 }}
+            className="rounded-full p-2 text-blue-500 hover:bg-blue-50 transition-colors"
+            aria-label={`View details of ${organization.name}`}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.stopPropagation();
+                onViewDetails(organization.id);
+              }
+            }}
+          >
+            <Eye className="h-5 w-5" />
+          </motion.button>
+          <motion.button
+            onClick={(e) => {
               e.stopPropagation();
               onEdit(organization);
-            }
-          }}
-        >
-          <Edit className="h-5 w-5" />
-        </button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(organization.id);
-          }}
-          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-          aria-label={`Delete ${organization.name}`}
-        >
-          <Trash className="h-4 w-4" />
-        </Button>
-      </div>
-    </td>
-  </tr>
-);
+            }}
+            whileHover={{ scale: 1.1, backgroundColor: "#EEF2FF" }}
+            whileTap={{ scale: 0.95 }}
+            className="rounded-full p-2 text-indigo-500 hover:bg-indigo-50 transition-colors"
+            aria-label={`Edit ${organization.name}`}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.stopPropagation();
+                onEdit(organization);
+              }
+            }}
+          >
+            <Edit className="h-5 w-5" />
+          </motion.button>
+          <motion.button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(organization.id);
+            }}
+            whileHover={{ scale: 1.1, backgroundColor: "#FEF2F2" }}
+            whileTap={{ scale: 0.95 }}
+            className="rounded-full p-2 text-red-500 hover:bg-red-50 transition-colors"
+            aria-label={`Delete ${organization.name}`}
+          >
+            <Trash className="h-5 w-5" />
+          </motion.button>
+        </div>
+      </td>
+    </motion.tr>
+  );
+};
 
 export default OrganizationRow;

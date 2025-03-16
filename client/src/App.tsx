@@ -26,6 +26,7 @@ const App = () => {
                         <Route path={paths.home} element={<Landing />} />
                         
                         {/* Routes with Layout */}
+                        <Route path={paths.users.details()} element={<Layout><UserDetails /></Layout>} />
                         <Route path={paths.dashboard} element={<Layout><Dashboard /></Layout>} />
                         <Route path={paths.organizations.root} element={<Layout><Organizations /></Layout>} />
                         <Route path={paths.organizations.details()} element={<Layout><OrganizationDetails /></Layout>} />
