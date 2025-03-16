@@ -177,6 +177,90 @@ Once the application is running, you can access:
 | GET | `/statistics/organization/:organizationId/employee/:employeeId/daily` | Get daily validation statistics for a specific employee | Super Admin, Org Admin |
 | GET | `/statistics/total` | Get total validation statistics | Super Admin, Org Admin |
 
+## 💾 Database Schema
+
+The application uses PostgreSQL with Prisma ORM. Below is the database schema:
+
+### User
+- **id**: UUID (Primary Key)
+- **firstName**: String
+- **lastName**: String
+- **email**: String (Unique)
+- **password**: String (Hashed)
+- **role**: Enum (SUPER_ADMIN, ORG_ADMIN, VALIDATOR)
+- **createdAt**: DateTime
+- **updatedAt**: DateTime
+- **deleted**: Boolean
+- **deletedAt**: DateTime (Optional)
+- **organizationId**: UUID (Foreign Key to Organization, Optional)
+
+### RefreshToken
+- **id**: UUID (Primary Key)
+- **token**: String (Unique)
+- **userId**: UUID (Foreign Key to User)
+- **expiresAt**: DateTime
+- **createdAt**: DateTime
+- **updatedAt**: DateTime
+- **deleted**: Boolean
+- **deletedAt**: DateTime (Optional)
+
+### Organization
+- **id**: UUID (Primary Key)
+- **name**: String
+- **createdAt**: DateTime
+- **updatedAt**: DateTime
+- **deleted**: Boolean
+- **deletedAt**: DateTime (Optional)
+
+### Employee
+- **id**: UUID (Primary Key)
+- **firstName**: String
+- **lastName**: String
+- **birthDate**: DateTime
+- **position**: String
+- **createdAt**: DateTime
+- **updatedAt**: DateTime
+- **deleted**: Boolean
+- **deletedAt**: DateTime (Optional)
+- **organizationId**: UUID (Foreign Key to Organization)
+
+### RetinaImage
+- **id**: UUID (Primary Key)
+- **path**: String
+- **features**: Float[] (Array of floating-point numbers)
+- **documentId**: String (Optional, Cosmos DB document ID)
+- **createdAt**: DateTime
+- **updatedAt**: DateTime
+- **deleted**: Boolean
+- **deletedAt**: DateTime (Optional)
+- **processedAt**: DateTime (Optional)
+- **employeeId**: UUID (Foreign Key to Employee)
+
+### ValidationStatistics
+- **id**: UUID (Primary Key)
+- **organizationId**: UUID (Foreign Key to Organization)
+- **employeeId**: UUID (Foreign Key to Employee, Optional)
+- **timestamp**: DateTime
+- **isSuccessful**: Boolean
+- **similarity**: Float (Optional)
+
+### Entity Relationships
+
+```
+┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
+│                 │       │                 │       │                 │
+│      User       │───┐   │  Organization   │───┐   │    Employee     │
+│                 │   │   │                 │   │   │                 │
+└────────┬────────┘   │   └────────┬────────┘   │   └────────┬────────┘
+         │            │            │            │            │
+         │            │            │            │            │
+┌────────▼────────┐   │   ┌────────▼────────┐   │   ┌────────▼────────┐
+│                 │   │   │                 │   │   │                 │
+│  RefreshToken   │   └──►│ValidationStats  │◄──┘   │   RetinaImage   │
+│                 │       │                 │───────│                 │
+└─────────────────┘       └─────────────────┘       └─────────────────┘
+```
+
 ## 📁 Project Structure
 
 The project follows a modular architecture based on NestJS best practices:
@@ -215,8 +299,3 @@ $ npm run test:e2e
 
 # Test coverage
 $ npm run test:cov
-```
-
-## 📄 License
-
-This project is [MIT licensed](LICENSE).
