@@ -1,9 +1,5 @@
 # Lumina-Secure: Retina Management System
 
-<p align="center">
-  <img src="https://via.placeholder.com/200x200?text=Lumina-Secure" alt="Lumina-Secure Logo" width="200" />
-</p>
-
 ## 🔍 Overview
 
 Lumina-Secure is a comprehensive solution designed to manage an organization's retina identification system. The platform enables secure employee identity verification through retina scanning technology, providing a robust biometric authentication system for organizations of all sizes.
