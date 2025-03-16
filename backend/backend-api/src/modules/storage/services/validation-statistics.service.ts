@@ -60,9 +60,7 @@ export class ValidationStatisticsService {
         isSuccessful: false,
       });
     } catch (error: any) {
-      this.logger.error(
-        `Failed to record failed validation: ${error.message}`,
-      );
+      this.logger.error(`Failed to record failed validation: ${error.message}`);
       throw error;
     }
   }
@@ -133,9 +131,7 @@ export class ValidationStatisticsService {
     try {
       return await this.validationStatisticsRepository.findFailed();
     } catch (error: any) {
-      this.logger.error(
-        `Failed to get failed validations: ${error.message}`,
-      );
+      this.logger.error(`Failed to get failed validations: ${error.message}`);
       throw error;
     }
   }
