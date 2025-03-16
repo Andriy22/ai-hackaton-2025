@@ -402,4 +402,5 @@ async def main():
     await service.start()
 
 if __name__ == "__main__":
+    # Run the service bus processing
     asyncio.run(main())

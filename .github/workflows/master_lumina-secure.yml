@@ -1,0 +1,110 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+name: Build and deploy Node.js app to Azure Web App - lumina-secure
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '22.x'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: './backend/backend-api/package-lock.json'
+      
+      - name: npm install, build, and test
+        working-directory: ./backend/backend-api
+        run: |
+          npm install
+          npm run build --if-present
+          npm run test --if-present
+      
+      - name: Create production deployment package
+        run: |
+          # Create a fresh deployment directory
+          mkdir -p deployment
+          
+          # Copy only production files (build output and package definitions)
+          cp -r backend/backend-api/dist deployment/
+          cp backend/backend-api/package.json deployment/
+          cp backend/backend-api/package-lock.json deployment/
+          
+          # Create a minimal web.config file if needed for Azure
+          echo '<?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <system.webServer>
+              <handlers>
+                <add name="iisnode" path="dist/main.js" verb="*" modules="iisnode" />
+              </handlers>
+              <rewrite>
+                <rules>
+                  <rule name="main">
+                    <match url="/*" />
+                    <action type="Rewrite" url="dist/main.js" />
+                  </rule>
+                </rules>
+              </rewrite>
+            </system.webServer>
+          </configuration>' > deployment/web.config
+          
+          # Debug: show what's in the deployment folder
+          echo "Files in deployment folder:"
+          ls -la deployment
+          
+      - name: Zip deployment package
+        run: |
+          cd deployment
+          # Zip everything but exclude any node_modules folder (if present)
+          zip -r ../release.zip . -x "node_modules/*"
+          cd ..
+          # Debug: show zip file size
+          ls -lh release.zip
+      
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-app
+          path: release.zip
+          
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: node-app
+  
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_B5E1D096537C45C4B7708F340FFCC833 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_93986CAA995942E087B249EFF639B340 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_ABB0944B89D34EEBA6D0FBE3BB9291DB }}
+  
+      - name: 'Deploy to Azure Web App'
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'lumina-secure'
+          slot-name: 'Production'
+          package: release.zip
