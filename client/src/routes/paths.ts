@@ -1,5 +1,6 @@
 export const paths = {
   home: '/',
+  landing: '/landing',
   auth: {
     login: '/auth/login'
   },

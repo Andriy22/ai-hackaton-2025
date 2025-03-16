@@ -13,9 +13,7 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      console.log('Checking authentication state:', isAuthenticated);
       if (!isAuthenticated) {
-        // Try to refresh the token if not authenticated
         await refreshToken();
       }
     };
@@ -24,7 +22,6 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   }, [isAuthenticated, refreshToken]);
 
   if (!isAuthenticated) {
-    // Redirect to login page but save the location they were trying to access
     return <Navigate to={paths.auth.login} state={{ from: location }} replace />;
   }
 

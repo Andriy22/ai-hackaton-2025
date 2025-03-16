@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useOrganizationsStore from '../store/useOrganizationsStore';
-import { Organization } from '../types/types';
+import { Organization, CreateOrganizationDto, UpdateOrganizationDto } from '../types/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -11,11 +12,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { formatDate } from '@/lib/utils';
-import { Edit, Plus, Trash } from 'lucide-react';
+import { Edit, Eye, Plus, Trash, Users, UserRound } from 'lucide-react';
+import { paths } from '@/routes/paths';
+import { Label } from '@/components/ui/label';
+import { Confirm } from '@/components/ui/confirm';
 
 export const OrganizationsTable = () => {
+  const navigate = useNavigate();
   const {
     organizations,
     meta,
@@ -30,7 +35,15 @@ export const OrganizationsTable = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
-  const [organizationName, setOrganizationName] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  
+  const [createFormData, setCreateFormData] = useState<CreateOrganizationDto>({
+    name: '',
+  });
+  
+  const [editFormData, setEditFormData] = useState<UpdateOrganizationDto>({
+    name: '',
+  });
 
   // Load organizations on mount
   useEffect(() => {
@@ -39,9 +52,11 @@ export const OrganizationsTable = () => {
 
   const handleCreateSubmit = async () => {
     try {
-      await createOrganization(organizationName);
+      await createOrganization(createFormData);
       setIsCreateModalOpen(false);
-      setOrganizationName('');
+      setCreateFormData({
+        name: '',
+      });
       toast.success('Organization created successfully');
     } catch (error) {
       toast.error('Failed to create organization');
@@ -52,10 +67,12 @@ export const OrganizationsTable = () => {
     if (!selectedOrganization) return;
 
     try {
-      await updateOrganization(selectedOrganization.id, organizationName);
+      await updateOrganization(selectedOrganization.id, editFormData);
       setIsEditModalOpen(false);
       setSelectedOrganization(null);
-      setOrganizationName('');
+      setEditFormData({
+        name: '',
+      });
       toast.success('Organization updated successfully');
     } catch (error) {
       toast.error('Failed to update organization');
@@ -63,8 +80,6 @@ export const OrganizationsTable = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this organization?')) return;
-
     try {
       await deleteOrganization(id);
       toast.success('Organization deleted successfully');
@@ -73,14 +88,34 @@ export const OrganizationsTable = () => {
     }
   };
 
+  const handleDeleteClick = (id: string) => {
+    setDeleteConfirmId(id);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmId(null);
+  };
+
   const handleEditClick = (organization: Organization) => {
     setSelectedOrganization(organization);
-    setOrganizationName(organization.name);
+    setEditFormData({
+      name: organization.name,
+    });
     setIsEditModalOpen(true);
+  };
+
+  const handleViewDetails = (organizationId: string) => {
+    navigate(paths.organizations.details(organizationId));
   };
 
   const handlePageChange = (page: number) => {
     fetchOrganizations(page, meta.limit);
+  };
+
+  const resetCreateForm = () => {
+    setCreateFormData({
+      name: '',
+    });
   };
 
   return (
@@ -90,7 +125,10 @@ export const OrganizationsTable = () => {
         
         <div className="flex flex-col gap-3 sm:flex-row">
           <button
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => {
+              resetCreateForm();
+              setIsCreateModalOpen(true);
+            }}
             className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             aria-label="Create new organization"
             tabIndex={0}
@@ -136,6 +174,12 @@ export const OrganizationsTable = () => {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Updated At
                 </th>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Users
+                </th>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Employees
+                </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
                   Actions
                 </th>
@@ -143,7 +187,13 @@ export const OrganizationsTable = () => {
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {organizations.map((organization) => (
-                <tr key={organization.id} className="hover:bg-gray-50">
+                <tr 
+                  key={organization.id} 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleViewDetails(organization.id)}
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && handleViewDetails(organization.id)}
+                >
                   <td className="whitespace-nowrap px-6 py-4">
                     <div className="text-sm font-medium text-gray-900">
                       {organization.name}
@@ -155,26 +205,63 @@ export const OrganizationsTable = () => {
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                     {formatDate(organization.updatedAt)}
                   </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-center">
+                    <div className="flex items-center justify-center">
+                      <Users className="mr-1 h-4 w-4 text-blue-500" />
+                      <span className="text-sm font-medium">{organization._count?.users || 0}</span>
+                    </div>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-center">
+                    <div className="flex items-center justify-center">
+                      <UserRound className="mr-1 h-4 w-4 text-green-500" />
+                      <span className="text-sm font-medium">{organization._count?.employees || 0}</span>
+                    </div>
+                  </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                    <div className="flex justify-end space-x-2">
+                    <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
                       <button
-                        onClick={() => handleEditClick(organization)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewDetails(organization.id);
+                        }}
+                        className="rounded p-1 text-green-500 hover:bg-green-100 hover:text-green-700"
+                        aria-label={`View details of ${organization.name}`}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.stopPropagation();
+                            handleViewDetails(organization.id);
+                          }
+                        }}
+                      >
+                        <Eye className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditClick(organization);
+                        }}
                         className="rounded p-1 text-blue-500 hover:bg-blue-100 hover:text-blue-700"
                         aria-label={`Edit ${organization.name}`}
                         tabIndex={0}
-                        onKeyDown={(e) => e.key === 'Enter' && handleEditClick(organization)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.stopPropagation();
+                            handleEditClick(organization);
+                          }
+                        }}
                       >
                         <Edit className="h-5 w-5" />
                       </button>
-                      <button
-                        onClick={() => handleDelete(organization.id)}
-                        className="rounded p-1 text-red-500 hover:bg-red-100 hover:text-red-700"
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteClick(organization.id)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
                         aria-label={`Delete ${organization.name}`}
-                        tabIndex={0}
-                        onKeyDown={(e) => e.key === 'Enter' && handleDelete(organization.id)}
                       >
-                        <Trash className="h-5 w-5" />
-                      </button>
+                        <Trash className="h-4 w-4" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -189,64 +276,58 @@ export const OrganizationsTable = () => {
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-700">Show</span>
             <select
+              className="block w-20 rounded-md border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
               value={meta.limit}
-              onChange={(e) => fetchOrganizations(meta.page, Number(e.target.value))}
-              className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              aria-label="Items per page"
+              onChange={(e) => fetchOrganizations(1, Number(e.target.value))}
             >
-              <option value="5">5</option>
               <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
+              <option value="100">100</option>
             </select>
-            <span className="text-sm text-gray-700">per page</span>
+            <span className="text-sm text-gray-700">entries</span>
           </div>
-          
-          <div className="text-sm text-gray-700">
-            Showing <span className="font-medium">{(meta.page - 1) * meta.limit + 1}</span> to{' '}
-            <span className="font-medium">
-              {Math.min(meta.page * meta.limit, meta.total)}
-            </span>{' '}
-            of <span className="font-medium">{meta.total}</span> organizations
-          </div>
-          
-          <div className="flex space-x-1">
-            {Array.from({ length: meta.totalPages }).map((_, i) => {
-              const pageNum = i + 1;
-              if (
-                pageNum === 1 ||
-                pageNum === meta.totalPages ||
-                (pageNum >= meta.page - 1 && pageNum <= meta.page + 1)
-              ) {
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => handlePageChange(pageNum)}
-                    className={`inline-flex items-center rounded-md border px-3 py-2 text-sm font-medium ${
-                      pageNum === meta.page
-                        ? 'border-primary bg-primary text-white'
-                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
-                    aria-label={`Page ${pageNum}`}
-                    aria-current={pageNum === meta.page ? 'page' : undefined}
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && handlePageChange(pageNum)}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              }
-              if (
-                (pageNum === 2 && meta.page > 3) ||
-                (pageNum === meta.totalPages - 1 && meta.page < meta.totalPages - 2)
-              ) {
-                return <span key={pageNum} className="px-2 py-2 text-gray-500">...</span>;
-              }
-              return null;
-            })}
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(meta.page - 1)}
+              disabled={meta.page === 1}
+              className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Previous page"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && meta.page > 1 && handlePageChange(meta.page - 1)}
+            >
+              Previous
+            </button>
+            <span className="text-sm text-gray-700">
+              Page {meta.page} of {meta.totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(meta.page + 1)}
+              disabled={meta.page === meta.totalPages}
+              className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Next page"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && meta.page < meta.totalPages && handlePageChange(meta.page + 1)}
+            >
+              Next
+            </button>
           </div>
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <Confirm
+        open={!!deleteConfirmId}
+        setOpen={(open) => !open && setDeleteConfirmId(null)}
+        title="Delete Organization"
+        message="Are you sure you want to delete this organization? This action cannot be undone."
+        confirmText="Delete"
+        confirmVariant="destructive"
+        confirmIcon={<Trash className="h-4 w-4" />}
+        onConfirm={() => deleteConfirmId ? handleDelete(deleteConfirmId) : undefined}
+        onCancel={handleDeleteCancel}
+      />
 
       {/* Create Organization Modal */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
@@ -254,20 +335,20 @@ export const OrganizationsTable = () => {
           <DialogHeader>
             <DialogTitle>Create Organization</DialogTitle>
             <DialogDescription>
-              Enter the details for the new organization.
+              Enter organization details below.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium text-gray-700">
-                Organization Name
-              </label>
+          <div className="mt-4 space-y-4">
+            <div className="grid grid-cols-4 items-center gap-3">
+              <Label htmlFor="create-name" className="text-right text-sm font-medium">
+                Name *
+              </Label>
               <Input
-                id="name"
-                value={organizationName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrganizationName(e.target.value)}
-                placeholder="Enter organization name"
-                className="w-full"
+                id="create-name"
+                value={createFormData.name}
+                onChange={(e) => setCreateFormData({ ...createFormData, name: e.target.value })}
+                placeholder="Organization name"
+                className="col-span-3"
               />
             </div>
           </div>
@@ -275,11 +356,13 @@ export const OrganizationsTable = () => {
             <Button
               variant="outline"
               onClick={() => setIsCreateModalOpen(false)}
-              className="mr-2"
             >
               Cancel
             </Button>
-            <Button onClick={handleCreateSubmit} disabled={!organizationName.trim()}>
+            <Button
+              onClick={handleCreateSubmit}
+              disabled={!createFormData.name.trim()}
+            >
               Create
             </Button>
           </DialogFooter>
@@ -292,20 +375,20 @@ export const OrganizationsTable = () => {
           <DialogHeader>
             <DialogTitle>Edit Organization</DialogTitle>
             <DialogDescription>
-              Update the organization details.
+              Update organization details below.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="edit-name" className="text-sm font-medium text-gray-700">
-                Organization Name
-              </label>
+          <div className="mt-4 space-y-4">
+            <div className="grid grid-cols-4 items-center gap-3">
+              <Label htmlFor="edit-name" className="text-right text-sm font-medium">
+                Name *
+              </Label>
               <Input
                 id="edit-name"
-                value={organizationName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrganizationName(e.target.value)}
-                placeholder="Enter organization name"
-                className="w-full"
+                value={editFormData.name || ''}
+                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                placeholder="Organization name"
+                className="col-span-3"
               />
             </div>
           </div>
@@ -313,12 +396,14 @@ export const OrganizationsTable = () => {
             <Button
               variant="outline"
               onClick={() => setIsEditModalOpen(false)}
-              className="mr-2"
             >
               Cancel
             </Button>
-            <Button onClick={handleEditSubmit} disabled={!organizationName.trim()}>
-              Update
+            <Button
+              onClick={handleEditSubmit}
+              disabled={!editFormData.name?.trim()}
+            >
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>

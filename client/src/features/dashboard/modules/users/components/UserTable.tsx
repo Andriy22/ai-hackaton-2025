@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { paths } from '@/routes/paths';
 import { UserForm } from './UserForm';
+import { getReadablUserRole } from '@/lib/utils';
+import { Confirm } from '@/components/ui/confirm';
 
 export const UserTable = () => {
   const navigate = useNavigate();
@@ -224,7 +226,7 @@ export const UserTable = () => {
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getRoleColorClass(user.role)}`}>
-                      {user.role}
+                      {getReadablUserRole(user.role)}
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
@@ -360,36 +362,17 @@ export const UserTable = () => {
         </div>
       )}
       
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="mb-4 text-lg font-bold text-gray-900">Confirm Delete</h3>
-            <p className="mb-6 text-sm text-gray-600">
-              Are you sure you want to delete this user? This action cannot be undone.
-            </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={handleDeleteCancel}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                aria-label="Cancel delete"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && handleDeleteCancel()}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDeleteConfirm(showDeleteConfirm)}
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-                aria-label="Confirm delete"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && handleDeleteConfirm(showDeleteConfirm)}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Confirm
+        open={!!showDeleteConfirm}
+        setOpen={(open) => !open && setShowDeleteConfirm(null)}
+        title="Delete User"
+        message="Are you sure you want to delete this user? This action cannot be undone."
+        confirmText="Delete"
+        confirmVariant="destructive"
+        confirmIcon={<Trash className="h-4 w-4" />}
+        onConfirm={() => showDeleteConfirm ? handleDeleteConfirm(showDeleteConfirm) : undefined}
+        onCancel={handleDeleteCancel}
+      />
       
       <UserForm
         isOpen={isCreateFormOpen}

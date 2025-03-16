@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { User, UserRole } from '../types/types';
 import useUsersStore from '../store/useUsersStore';
-import { X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 
 interface UserFormProps {
   user?: User;
@@ -40,8 +44,6 @@ export const UserForm = ({ user, isOpen, onClose, isEditMode }: UserFormProps) =
     }
   }, [isOpen, user, clearError]);
 
-  if (!isOpen) return null;
-
   const validateForm = (): boolean => {
     const errors: Partial<Record<keyof UserFormData, string>> = {};
     
@@ -69,12 +71,20 @@ export const UserForm = ({ user, isOpen, onClose, isEditMode }: UserFormProps) =
     return Object.keys(errors).length === 0;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
     // Clear error for this field when user starts typing
     if (formErrors[name as keyof UserFormData]) {
+      setFormErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const handleSelectChange = (value: string, name: keyof UserFormData) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    if (formErrors[name]) {
       setFormErrors(prev => ({ ...prev, [name]: undefined }));
     }
   };
@@ -102,152 +112,121 @@ export const UserForm = ({ user, isOpen, onClose, isEditMode }: UserFormProps) =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>
             {isEditMode ? 'Edit User' : 'Create New User'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
-            aria-label="Close dialog"
-            tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && onClose()}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
         
         {error && (
-          <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-500">
+          <div className="my-2 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-600">
             {error}
           </div>
         )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-              First Name
-            </label>
-            <input
-              type="text"
+          <div className="space-y-1.5">
+            <Label htmlFor="firstName">First Name</Label>
+            <Input
               id="firstName"
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              className={`mt-1 block w-full rounded-md border ${
-                formErrors.firstName ? 'border-red-500' : 'border-gray-300'
-              } px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
+              className={formErrors.firstName ? 'border-red-500' : ''}
               disabled={isLoading}
             />
             {formErrors.firstName && (
-              <p className="mt-1 text-xs text-red-500">{formErrors.firstName}</p>
+              <p className="text-xs text-red-500">{formErrors.firstName}</p>
             )}
           </div>
           
-          <div>
-            <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-              Last Name
-            </label>
-            <input
-              type="text"
+          <div className="space-y-1.5">
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input
               id="lastName"
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              className={`mt-1 block w-full rounded-md border ${
-                formErrors.lastName ? 'border-red-500' : 'border-gray-300'
-              } px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
+              className={formErrors.lastName ? 'border-red-500' : ''}
               disabled={isLoading}
             />
             {formErrors.lastName && (
-              <p className="mt-1 text-xs text-red-500">{formErrors.lastName}</p>
+              <p className="text-xs text-red-500">{formErrors.lastName}</p>
             )}
           </div>
           
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input
               type="email"
               id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className={`mt-1 block w-full rounded-md border ${
-                formErrors.email ? 'border-red-500' : 'border-gray-300'
-              } px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
+              className={formErrors.email ? 'border-red-500' : ''}
               disabled={isLoading}
             />
             {formErrors.email && (
-              <p className="mt-1 text-xs text-red-500">{formErrors.email}</p>
+              <p className="text-xs text-red-500">{formErrors.email}</p>
             )}
           </div>
           
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          <div className="space-y-1.5">
+            <Label htmlFor="password">
               Password {isEditMode && '(Leave blank to keep current password)'}
-            </label>
-            <input
+            </Label>
+            <Input
               type="password"
               id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className={`mt-1 block w-full rounded-md border ${
-                formErrors.password ? 'border-red-500' : 'border-gray-300'
-              } px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
+              className={formErrors.password ? 'border-red-500' : ''}
               disabled={isLoading}
             />
             {formErrors.password && (
-              <p className="mt-1 text-xs text-red-500">{formErrors.password}</p>
+              <p className="text-xs text-red-500">{formErrors.password}</p>
             )}
           </div>
           
-          <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-              Role
-            </label>
-            <select
-              id="role"
-              name="role"
+          <div className="space-y-1.5">
+            <Label htmlFor="role">Role</Label>
+            <Select
               value={formData.role}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              onValueChange={(value) => handleSelectChange(value, 'role')}
               disabled={isLoading}
             >
-              <option value={UserRole.SUPER_ADMIN}>Super Admin</option>
-              <option value={UserRole.ADMIN}>Admin</option>
-              <option value={UserRole.VALIDATOR}>Validator</option>
-            </select>
+              <SelectTrigger id="role">
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={UserRole.SUPER_ADMIN}>Super Admin</SelectItem>
+                <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
+                <SelectItem value={UserRole.VALIDATOR}>Validator</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
+          <DialogFooter className="mt-6">
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               disabled={isLoading}
-              aria-label="Cancel"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && onClose()}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50"
               disabled={isLoading}
-              aria-label={isEditMode ? 'Save changes' : 'Create user'}
-              tabIndex={0}
             >
               {isLoading ? 'Processing...' : isEditMode ? 'Save Changes' : 'Create User'}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

@@ -22,12 +22,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UserRole, UserUpdateDto } from '../types/types';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { Confirm } from '@/components/ui/confirm';
 
 export const UserDetails = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [formData, setFormData] = useState<UserUpdateDto>({});
   
   const {
@@ -61,11 +63,10 @@ export const UserDetails = () => {
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      if (userId) {
-        await deleteUser(userId);
-        navigate(paths.dashboard);
-      }
+    if (userId) {
+      await deleteUser(userId);
+      toast.success('User deleted successfully');
+      navigate(paths.dashboard);
     }
   };
 
@@ -84,10 +85,9 @@ export const UserDetails = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="text-lg font-medium text-gray-600">Loading user data...</p>
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
         </div>
       </div>
     );
@@ -236,16 +236,15 @@ export const UserDetails = () => {
               </form>
             </SheetContent>
           </Sheet>
-          <button
-            onClick={handleDelete}
-            className="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+          <Button
+            variant="destructive"
+            className="inline-flex items-center"
+            onClick={() => setIsDeleteConfirmOpen(true)}
             aria-label="Delete user"
-            tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && handleDelete()}
           >
             <Trash className="mr-2 h-4 w-4" />
             Delete
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -300,6 +299,16 @@ export const UserDetails = () => {
           </dl>
         </div>
       </div>
+      <Confirm
+        open={isDeleteConfirmOpen}
+        setOpen={setIsDeleteConfirmOpen}
+        title="Delete User"
+        message="Are you sure you want to delete this user? This action cannot be undone."
+        confirmText="Delete"
+        confirmVariant="destructive"
+        confirmIcon={<Trash className="h-4 w-4" />}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

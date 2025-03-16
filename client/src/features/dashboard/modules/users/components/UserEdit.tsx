@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import useDashboardStore from '../../../store/useDashboardStore';
+import useUsersStore from '../store/useUsersStore';
 import { UserForm } from './UserForm';
 import { ArrowLeft } from 'lucide-react';
 import { paths } from '@/routes/paths';
+import { LoadingState, ErrorState, NotFoundState } from '@/components/ui/feedback';
 
 export const UserEdit = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const { selectedUser, isLoading, error, fetchUserById } = useDashboardStore();
+  const { selectedUser, isLoading, error, fetchUserById } = useUsersStore();
   const [isFormOpen, setIsFormOpen] = useState(true);
 
   useEffect(() => {
@@ -27,49 +28,33 @@ export const UserEdit = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="text-lg font-medium text-gray-600">Loading user data...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState message="Loading user data..." />;
   }
 
   if (error) {
     return (
-      <div className="rounded-lg bg-red-50 p-6 text-center">
-        <p className="text-lg font-medium text-red-600">{error}</p>
-        <button
-          onClick={handleBack}
-          className="mt-4 inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
-          aria-label="Go back to user details"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && handleBack()}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to User Details
-        </button>
-      </div>
+      <ErrorState 
+        message={error}
+        action={{
+          label: "Back to User Details",
+          onClick: handleBack,
+          icon: <ArrowLeft className="h-4 w-4" />
+        }}
+      />
     );
   }
 
   if (!selectedUser) {
     return (
-      <div className="rounded-lg bg-yellow-50 p-6 text-center">
-        <p className="text-lg font-medium text-yellow-600">User not found</p>
-        <button
-          onClick={() => navigate(paths.dashboard)}
-          className="mt-4 inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
-          aria-label="Go back to dashboard"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && navigate(paths.dashboard)}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
-        </button>
-      </div>
+      <NotFoundState
+        title="User Not Found"
+        message="The user you are looking for does not exist or you do not have permission to view it."
+        action={{
+          label: "Back to Dashboard",
+          onClick: () => navigate(paths.dashboard),
+          icon: <ArrowLeft className="h-4 w-4" />
+        }}
+      />
     );
   }
 
