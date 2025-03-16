@@ -1,4 +1,4 @@
-import { ValidationResult, Employee } from "./types";
+import { ValidationResult, Employee, ValidationStatistics } from "./types";
 import { api } from '@/features/auth/api/apiInterceptor';
 
 export const validationApi = {
@@ -62,8 +62,34 @@ export const validationApi = {
     }
   
     return response.json();
+  },
+
+  /**
+   * Fetches daily validation statistics for an organization
+   */
+  async getDailyStatistics(
+    startDate: string, 
+    endDate: string, 
+    organizationId?: string
+  ): Promise<ValidationStatistics> {
+    let url = `/statistics/daily?startDate=${startDate}&endDate=${endDate}`;
+    
+    if (organizationId) {
+      url += `&organizationId=${organizationId}`;
+    }
+    
+    const response = await api(url, {
+      method: "GET",
+    });
+  
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to fetch validation statistics");
+    }
+  
+    return response.json();
   }
 };
 
 // Re-export types to maintain backward compatibility
-export type { ValidationResult, Employee } from "./types";
+export type { ValidationResult, Employee, ValidationStatistics, DailyStatItem } from "./types";

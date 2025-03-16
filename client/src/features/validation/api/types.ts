@@ -20,3 +20,14 @@ export interface ValidationError {
   message: string;
   errors?: Record<string, string[]>;
 }
+
+export interface DailyStatItem {
+  date: string;
+  successCount: number;
+  failureCount: number;
+}
+
+export interface ValidationStatistics {
+  organizationId: string;
+  dailyStats: DailyStatItem[];
+}

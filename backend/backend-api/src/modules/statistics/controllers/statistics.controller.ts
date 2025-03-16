@@ -1,14 +1,15 @@
 import {
   Controller,
   Get,
-  Injectable,
   Logger,
+  Param,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiResponse,
   ApiTags,
@@ -25,11 +26,10 @@ import { StatisticsService } from '../services/statistics.service';
 /**
  * Controller for validation statistics operations
  */
-@ApiTags('Statistics')
+@ApiTags('statistics')
 @Controller('statistics')
-@ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Injectable()
+@ApiBearerAuth()
 export class StatisticsController {
   private readonly logger = new Logger(StatisticsController.name);
 
@@ -61,6 +61,16 @@ export class StatisticsController {
     required: false,
     description: 'Organization ID to filter statistics by',
   })
+  @ApiQuery({
+    name: 'startDate',
+    required: true,
+    description: 'Start date for the statistics period',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: true,
+    description: 'End date for the statistics period',
+  })
   async getDailyStatistics(
     @Query() query: GetDailyStatisticsDto,
   ): Promise<DailyStatisticsResponseDto> {
@@ -74,6 +84,63 @@ export class StatisticsController {
       query.organizationId,
       query.startDate,
       query.endDate,
+    );
+  }
+
+  /**
+   * Get daily validation statistics for a specific employee in an organization
+   * @param organizationId - Organization ID to filter statistics by
+   * @param employeeId - Employee ID to filter statistics by
+   * @param query - Query parameters for filtering statistics by date range
+   * @returns Daily statistics response with data points for each day
+   */
+  @Get('organization/:organizationId/employee/:employeeId/daily')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN)
+  @ApiOperation({
+    summary: 'Get daily validation statistics for a specific employee',
+    description:
+      'Retrieves daily validation statistics for a specific employee in an organization',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Employee daily validation statistics retrieved successfully',
+    type: DailyStatisticsResponseDto,
+  })
+  @ApiParam({
+    name: 'organizationId',
+    required: true,
+    description: 'Organization ID to filter statistics by',
+  })
+  @ApiParam({
+    name: 'employeeId',
+    required: true,
+    description: 'Employee ID to filter statistics by',
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: true,
+    description: 'Start date for the statistics period',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: true,
+    description: 'End date for the statistics period',
+  })
+  async getEmployeeDailyStatistics(
+    @Param('organizationId') organizationId: string,
+    @Param('employeeId') employeeId: string,
+    @Query('startDate') startDate: Date,
+    @Query('endDate') endDate: Date,
+  ): Promise<DailyStatisticsResponseDto> {
+    this.logger.log(
+      `Getting daily statistics for employee ${employeeId} in organization ${organizationId} from ${startDate.toISOString()} to ${endDate.toISOString()}`,
+    );
+
+    return this.statisticsService.getEmployeeDailyStatistics(
+      organizationId,
+      employeeId,
+      startDate,
+      endDate,
     );
   }
 
