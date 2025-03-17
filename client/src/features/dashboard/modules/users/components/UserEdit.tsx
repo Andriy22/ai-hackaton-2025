@@ -38,8 +38,7 @@ export const UserEdit = () => {
         message={error}
         action={{
           label: "Back to User Details",
-          onClick: handleBack,
-          icon: <ArrowLeft className="h-4 w-4" />
+          onClick: handleBack
         }}
       />
     );
@@ -52,8 +51,7 @@ export const UserEdit = () => {
         message="The user you are looking for does not exist or you do not have permission to view it."
         action={{
           label: "Back to Dashboard",
-          onClick: () => navigate(paths.dashboard),
-          icon: <ArrowLeft className="h-4 w-4" />
+          onClick: () => navigate(paths.dashboard)
         }}
       />
     );
