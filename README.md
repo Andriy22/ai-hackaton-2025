@@ -151,14 +151,3 @@ npm run dev
 - Role-based access control
 - Comprehensive logging and auditing
 
-## 🤝 Contributing
-
-Please see our [CONTRIBUTING.md](CONTRIBUTING.md) file for details on how to contribute to this project.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 📞 Support
-
-For support and inquiries, please contact our team at support@lumina-secure.com.
