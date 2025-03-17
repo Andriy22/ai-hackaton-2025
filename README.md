@@ -88,7 +88,7 @@ The Lumina-Secure platform consists of three main components:
 
 #### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-organization/lumina-secure.git
+git clone https://github.com/amdriy22/ai-hackaton-2025.git
 cd lumina-secure
 ```
 
