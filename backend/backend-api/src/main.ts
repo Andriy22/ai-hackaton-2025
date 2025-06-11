@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module';
 
+console.log('Hello World - Debug message added!');
 console.log('Environment variables loaded:');
 console.log(`- JWT_ACCESS_SECRET: ${process.env.JWT_ACCESS_SECRET}`);
 console.log(`- JWT_REFRESH_SECRET: ${process.env.JWT_REFRESH_SECRET}`);
