@@ -9,6 +9,8 @@ console.log(`- JWT_ACCESS_SECRET: ${process.env.JWT_ACCESS_SECRET}`);
 console.log(`- JWT_REFRESH_SECRET: ${process.env.JWT_REFRESH_SECRET}`);
 console.log(`- PORT: ${process.env.PORT || '3000 (default)'}`);
 
+console.log('Hello World Debug: Application starting...');
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
