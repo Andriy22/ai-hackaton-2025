@@ -1,10 +1,11 @@
 import { UserTable } from '@/features/dashboard/modules/users/components/UserTable';
 import { OrganizationsTable } from '@/features/dashboard/modules/organizations/components/OrganizationsTable';
 import { SystemValidationStatistics } from '@/features/dashboard/modules/admin/components/SystemValidationStatistics';
+import { SystemUserRoleStatistics } from '@/features/dashboard/modules/admin/components/SystemUserRoleStatistics';
 import useAuthStore from '@/features/auth/store/useAuthStore';
 import { UserRole } from '@/features/dashboard/modules/users/types/types';
 import { motion } from 'framer-motion';
-import { BarChart3, Users, Building2, Activity } from 'lucide-react';
+import { BarChart3, Users, Building2, Activity, UserCheck } from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useAuthStore();
@@ -102,6 +103,20 @@ const Dashboard = () => {
             <h2 className="text-xl font-semibold text-gray-800">System-wide Validation Analytics</h2>
           </div>
           <SystemValidationStatistics />
+        </motion.section>
+      )}
+
+      {/* System-wide User Role Statistics for Super Admin */}
+      {isSuperAdmin && (
+        <motion.section 
+          variants={itemVariants}
+          className="mb-12"
+        >
+          <div className="flex items-center mb-4">
+            <UserCheck className="h-6 w-6 text-purple-500 mr-2" />
+            <h2 className="text-xl font-semibold text-gray-800">User Role Analytics</h2>
+          </div>
+          <SystemUserRoleStatistics />
         </motion.section>
       )}
 
