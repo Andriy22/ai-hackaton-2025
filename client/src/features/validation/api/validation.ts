@@ -1,5 +1,5 @@
 import { api } from '@/features/auth/api/apiInterceptor';
-import { Employee, ValidationResult, ValidationStatistics } from "./types";
+import { Employee, ValidationResult, ValidationStatistics, UserRoleStatistics } from "./types";
 
 export const validationApi = {
   /**
@@ -88,9 +88,25 @@ export const validationApi = {
     }
   
     return response.json();
+  },
+
+  /**
+   * Fetches user role statistics showing distribution of users by role
+   */
+  async getUserRoleStatistics(): Promise<UserRoleStatistics> {
+    const response = await api('/statistics/user-roles', {
+      method: "GET",
+    });
+  
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to fetch user role statistics");
+    }
+  
+    return response.json();
   }
 };
 
 // Re-export types to maintain backward compatibility
-export type { DailyStatItem, Employee, ValidationResult, ValidationStatistics } from "./types";
+export type { DailyStatItem, Employee, ValidationResult, ValidationStatistics, UserRoleStatistics, UserRoleStatisticsDataPoint } from "./types";
 
