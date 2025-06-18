@@ -42,6 +42,11 @@ export const HeroSection = () => {
                 Latest Research
               </div>
               
+              {/* Hello World Message */}
+              <div className="text-2xl font-bold text-teal-600 bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">
+                Hello World
+              </div>
+              
               {/* Main heading with gradient text */}
               <h1 className="text-4xl font-bold leading-tight tracking-tight text-gray-900 md:text-5xl lg:text-6xl">
                 Beyond the Iris: <span className="bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">Retina Scan</span> for Future Biometric Security
