@@ -20,6 +20,12 @@ export default function Landing() {
         {/* Hero section without container constraints for full-width design */}
         <HeroSection />
         
+        {/* Hello World Section */}
+        <div className="text-center py-8">
+          <h2 className="text-4xl font-bold text-gray-800 mb-4">Hello World</h2>
+          <p className="text-lg text-gray-600">Welcome to our retina scanning platform</p>
+        </div>
+        
         {/* Content sections with elegant spacing */}
         <div className="space-y-24 py-12 md:py-16 lg:py-24">
           <div id="what-is-retina-scan" className="scroll-mt-24">
