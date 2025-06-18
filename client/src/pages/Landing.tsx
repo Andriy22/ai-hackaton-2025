@@ -17,6 +17,12 @@ export default function Landing() {
       
       {/* Main content container */}
       <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8">
+        {/* Hello World Section */}
+        <div className="text-center py-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Hello World</h2>
+          <p className="text-lg text-gray-600">Welcome to LUMINA SECURE</p>
+        </div>
+        
         {/* Hero section without container constraints for full-width design */}
         <HeroSection />
         
