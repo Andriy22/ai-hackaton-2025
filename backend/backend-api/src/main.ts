@@ -58,6 +58,7 @@ async function bootstrap(): Promise<void> {
   console.log(`Application is running on: ${await app.getUrl()}`);
   console.log(`API Documentation available at: ${await app.getUrl()}/api`);
   console.log(`Scalar API Reference available at: ${await app.getUrl()}/docs`);
+  console.log('Hello World!');
 }
 
 bootstrap()
