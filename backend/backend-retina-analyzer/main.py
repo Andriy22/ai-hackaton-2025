@@ -13,6 +13,8 @@ import uuid
 import cv2
 from typing import Dict, Any, List, Optional
 import datetime
+import psutil
+import time
 
 # Configure logging
 logging.basicConfig(
@@ -38,6 +40,44 @@ class RetinaAnalyzerService:
         self.response_queue_name = os.getenv("AZURE_SERVICE_BUS_RESPONSE_QUEUE_NAME")
         self.validation_queue_name = os.getenv("AZURE_SERVICE_BUS_VALIDATION_QUEUE_NAME")
         self.validation_response_queue_name = os.getenv("AZURE_SERVICE_BUS_VALIDATION_RESPONSE_QUEUE_NAME")
+        self.health_monitoring_interval = int(os.getenv("HEALTH_MONITORING_INTERVAL", "300"))  # 5 minutes default
+        self.health_monitoring_task = None
+    
+    async def monitor_system_health(self):
+        """Monitor system health and log resource usage periodically."""
+        logger.info(f"Starting system health monitoring (interval: {self.health_monitoring_interval}s)")
+        
+        while True:
+            try:
+                # Get system resource usage
+                cpu_percent = psutil.cpu_percent(interval=1)
+                memory = psutil.virtual_memory()
+                disk = psutil.disk_usage('/')
+                
+                # Get process-specific information
+                process = psutil.Process()
+                process_memory = process.memory_info()
+                process_cpu = process.cpu_percent()
+                
+                # Log health metrics
+                logger.info(f"System Health - CPU: {cpu_percent}%, Memory: {memory.percent}% ({memory.used / (1024**3):.1f}GB/{memory.total / (1024**3):.1f}GB), "
+                           f"Disk: {disk.percent}% ({disk.used / (1024**3):.1f}GB/{disk.total / (1024**3):.1f}GB)")
+                logger.info(f"Process Health - CPU: {process_cpu}%, Memory: {process_memory.rss / (1024**2):.1f}MB, "
+                           f"Threads: {process.num_threads()}")
+                
+                # Check for concerning resource usage
+                if cpu_percent > 80:
+                    logger.warning(f"High CPU usage detected: {cpu_percent}%")
+                if memory.percent > 85:
+                    logger.warning(f"High memory usage detected: {memory.percent}%")
+                if disk.percent > 90:
+                    logger.warning(f"High disk usage detected: {disk.percent}%")
+                
+                await asyncio.sleep(self.health_monitoring_interval)
+                
+            except Exception as e:
+                logger.error(f"Error in health monitoring: {str(e)}")
+                await asyncio.sleep(60)  # Wait 1 minute before retrying
     
     async def start(self):
         """Start the service and begin processing messages from Service Bus."""
@@ -85,6 +125,10 @@ class RetinaAnalyzerService:
             logger.error("Blob Storage is not configured. Check your .env file.")
             return
         
+        # Start health monitoring
+        logger.info("Starting system health monitoring...")
+        self.health_monitoring_task = asyncio.create_task(self.monitor_system_health())
+        
         # Start processing messages
         try:
             logger.info("Starting to process messages from Service Bus...")
@@ -99,6 +143,14 @@ class RetinaAnalyzerService:
         except Exception as e:
             logger.error(f"Error in message processing: {str(e)}")
         finally:
+            # Stop health monitoring
+            if self.health_monitoring_task:
+                self.health_monitoring_task.cancel()
+                try:
+                    await self.health_monitoring_task
+                except asyncio.CancelledError:
+                    logger.info("Health monitoring stopped")
+            
             self.service_bus.stop_processing()
             logger.info("Retina Analyzer Service stopped")
     
