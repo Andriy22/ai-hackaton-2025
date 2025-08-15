@@ -37,6 +37,12 @@ export const HeroSection = () => {
           {/* Main content - 3 columns on large screens */}
           <div className="lg:col-span-3">
             <div className="space-y-8">
+              {/* Hello World Message */}
+              <div className="mb-4 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 p-4 text-white shadow-lg">
+                <p className="text-lg font-bold">Hello World!</p>
+                <p className="text-sm">Welcome to Lumina-Secure Retina Security System</p>
+              </div>
+
               {/* Badge */}
               <div className="inline-flex items-center rounded-full bg-teal-50 px-3 py-1 text-sm font-medium text-teal-700 ring-1 ring-inset ring-teal-700/20">
                 Latest Research
