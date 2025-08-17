@@ -157,6 +157,9 @@ export class ValidationController {
     @Body() validateDto: ValidateRetinaImageDto,
   ): Promise<ValidationResponse> {
     try {
+      // Test log for AD5-6
+      this.logger.log('Hello World from Validation Service - AD5-6');
+      
       if (!file) {
         return {
           status: 'error',
