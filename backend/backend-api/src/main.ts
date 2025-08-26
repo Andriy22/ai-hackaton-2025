@@ -54,7 +54,7 @@ async function bootstrap(): Promise<void> {
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
-  console.log('Server started');
+  console.log('server started');
   console.log('Hello World');
   console.log(`Application is running on: ${await app.getUrl()}`);
   console.log(`API Documentation available at: ${await app.getUrl()}/api`);
