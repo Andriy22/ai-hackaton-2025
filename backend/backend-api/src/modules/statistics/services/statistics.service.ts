@@ -1,11 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { UserRole } from '@prisma/client';
 import { ValidationStatistics } from '../../storage/entities/validation-statistics.entity';
 import { ValidationStatisticsService } from '../../storage/services/validation-statistics.service';
+import { UsersRepository } from '../../users/repositories/users.repository';
 import {
   DailyStatisticsDataPointDto,
   DailyStatisticsResponseDto,
 } from '../dto/daily-statistics-response.dto';
 import { TotalStatisticsResponseDto } from '../dto/total-statistics-response.dto';
+import {
+  UserRoleStatisticsResponseDto,
+  UserRoleStatisticsDataPointDto,
+} from '../dto/user-role-statistics-response.dto';
 
 /**
  * Service for processing and retrieving validation statistics
@@ -17,9 +23,11 @@ export class StatisticsService {
   /**
    * Constructor for StatisticsService
    * @param validationStatisticsService - Service for validation statistics operations
+   * @param usersRepository - Repository for user database operations
    */
   constructor(
     private readonly validationStatisticsService: ValidationStatisticsService,
+    private readonly usersRepository: UsersRepository,
   ) {}
 
   /**
@@ -271,6 +279,48 @@ export class StatisticsService {
 
       this.logger.error(
         `Failed to get total statistics: ${errorMessage}`,
+        errorStack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get user role statistics showing distribution of users by role
+   * @returns User role statistics response with counts and percentages
+   */
+  async getUserRoleStatistics(): Promise<UserRoleStatisticsResponseDto> {
+    try {
+      // Get counts for each role
+      const roleValues = Object.values(UserRole);
+      const roleCounts = await Promise.all(
+        roleValues.map(async (role) => {
+          const count = await this.usersRepository.count({ role });
+          return { role, count };
+        })
+      );
+
+      // Calculate total users
+      const totalUsers = roleCounts.reduce((sum, { count }) => sum + count, 0);
+
+      // Create role statistics with percentages
+      const roleStats: UserRoleStatisticsDataPointDto[] = roleCounts.map(({ role, count }) => ({
+        role,
+        count,
+        percentage: totalUsers > 0 ? parseFloat(((count / totalUsers) * 100).toFixed(2)) : 0,
+      }));
+
+      return {
+        roleStats,
+        totalUsers,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      this.logger.error(
+        `Failed to get user role statistics: ${errorMessage}`,
         errorStack,
       );
       throw error;

@@ -21,6 +21,7 @@ import { UserRole } from '../../users/enums/user-role.enum';
 import { DailyStatisticsResponseDto } from '../dto/daily-statistics-response.dto';
 import { GetDailyStatisticsDto } from '../dto/get-daily-statistics.dto';
 import { TotalStatisticsResponseDto } from '../dto/total-statistics-response.dto';
+import { UserRoleStatisticsResponseDto } from '../dto/user-role-statistics-response.dto';
 import { StatisticsService } from '../services/statistics.service';
 
 /**
@@ -176,5 +177,27 @@ export class StatisticsController {
     );
 
     return this.statisticsService.getTotalStatistics(organizationId);
+  }
+
+  /**
+   * Get user role statistics showing distribution of users by role
+   * @returns User role statistics response with counts and percentages
+   */
+  @Get('user-roles')
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Get user role statistics',
+    description:
+      'Retrieves statistics showing distribution of users by role (SUPER_ADMIN, ORG_ADMIN, VALIDATOR)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User role statistics retrieved successfully',
+    type: UserRoleStatisticsResponseDto,
+  })
+  async getUserRoleStatistics(): Promise<UserRoleStatisticsResponseDto> {
+    this.logger.log('Getting user role statistics');
+
+    return this.statisticsService.getUserRoleStatistics();
   }
 }

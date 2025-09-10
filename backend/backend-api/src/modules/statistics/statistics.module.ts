@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { StorageModule } from '../storage/storage.module';
+import { UsersModule } from '../users/users.module';
 import { StatisticsController } from './controllers/statistics.controller';
 import { StatisticsService } from './services/statistics.service';
 
@@ -7,7 +8,7 @@ import { StatisticsService } from './services/statistics.service';
  * Module for validation statistics operations
  */
 @Module({
-  imports: [StorageModule],
+  imports: [StorageModule, UsersModule],
   controllers: [StatisticsController],
   providers: [StatisticsService],
   exports: [StatisticsService],

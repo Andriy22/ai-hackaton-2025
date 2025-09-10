@@ -31,3 +31,14 @@ export interface ValidationStatistics {
   organizationId: string;
   dailyStats: DailyStatItem[];
 }
+
+export interface UserRoleStatisticsDataPoint {
+  role: string;
+  count: number;
+  percentage: number;
+}
+
+export interface UserRoleStatistics {
+  roleStats: UserRoleStatisticsDataPoint[];
+  totalUsers: number;
+}
