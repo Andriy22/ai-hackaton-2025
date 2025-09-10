@@ -10,6 +10,7 @@ console.log(`- JWT_REFRESH_SECRET: ${process.env.JWT_REFRESH_SECRET}`);
 console.log(`- PORT: ${process.env.PORT || '3000 (default)'}`);
 
 async function bootstrap(): Promise<void> {
+  console.log('Hello World!');
   const app = await NestFactory.create(AppModule);
 
   // Enable validation pipes globally
@@ -58,6 +59,7 @@ async function bootstrap(): Promise<void> {
   console.log(`Application is running on: ${await app.getUrl()}`);
   console.log(`API Documentation available at: ${await app.getUrl()}/api`);
   console.log(`Scalar API Reference available at: ${await app.getUrl()}/docs`);
+  console.log('Hello World!');
 }
 
 bootstrap()
