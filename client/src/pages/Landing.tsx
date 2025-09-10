@@ -15,6 +15,15 @@ export default function Landing() {
         <Navbar />
       </div>
       
+      {/* Hello World Message */}
+      <div className="bg-gradient-to-r from-teal-500 to-blue-600 py-4">
+        <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-2xl md:text-3xl font-bold text-white">
+            Hello World
+          </h1>
+        </div>
+      </div>
+      
       {/* Main content container */}
       <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8">
         {/* Hero section without container constraints for full-width design */}
