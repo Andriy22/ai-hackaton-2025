@@ -134,14 +134,14 @@ export const ValidationStatistics = ({ organizationId }: ValidationStatisticsPro
               <Bar 
                 dataKey="successCount" 
                 name="Successful Validations" 
-                fill="#10b981" 
+                fill="#fb923c" 
                 radius={[4, 4, 0, 0]}
                 animationDuration={1500}
               />
               <Bar 
                 dataKey="failureCount" 
                 name="Failed Validations" 
-                fill="#ef4444" 
+                fill="#dc2626" 
                 radius={[4, 4, 0, 0]}
                 animationDuration={1500}
               />
@@ -175,7 +175,7 @@ export const ValidationStatistics = ({ organizationId }: ValidationStatisticsPro
                 type="monotone" 
                 dataKey="successCount" 
                 name="Successful Validations" 
-                stroke="#10b981" 
+                stroke="#fb923c" 
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
@@ -185,7 +185,7 @@ export const ValidationStatistics = ({ organizationId }: ValidationStatisticsPro
                 type="monotone" 
                 dataKey="failureCount" 
                 name="Failed Validations" 
-                stroke="#ef4444" 
+                stroke="#dc2626" 
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
@@ -200,12 +200,12 @@ export const ValidationStatistics = ({ organizationId }: ValidationStatisticsPro
             <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
               <defs>
                 <linearGradient id="colorSuccess" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                  <stop offset="5%" stopColor="#fb923c" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#fb923c" stopOpacity={0.1}/>
                 </linearGradient>
                 <linearGradient id="colorFailure" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
+                  <stop offset="5%" stopColor="#dc2626" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#dc2626" stopOpacity={0.1}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" />
@@ -231,7 +231,7 @@ export const ValidationStatistics = ({ organizationId }: ValidationStatisticsPro
                 type="monotone" 
                 dataKey="successCount" 
                 name="Successful Validations" 
-                stroke="#10b981" 
+                stroke="#fb923c" 
                 fillOpacity={1} 
                 fill="url(#colorSuccess)"
                 animationDuration={1500}
@@ -240,7 +240,7 @@ export const ValidationStatistics = ({ organizationId }: ValidationStatisticsPro
                 type="monotone" 
                 dataKey="failureCount" 
                 name="Failed Validations" 
-                stroke="#ef4444" 
+                stroke="#dc2626" 
                 fillOpacity={1} 
                 fill="url(#colorFailure)"
                 animationDuration={1500}
@@ -274,14 +274,14 @@ export const ValidationStatistics = ({ organizationId }: ValidationStatisticsPro
               <Bar 
                 dataKey="successCount" 
                 name="Successful Validations" 
-                fill="#10b981" 
+                fill="#fb923c" 
                 radius={[4, 4, 0, 0]}
                 animationDuration={1500}
               />
               <Bar 
                 dataKey="failureCount" 
                 name="Failed Validations" 
-                fill="#ef4444" 
+                fill="#dc2626" 
                 radius={[4, 4, 0, 0]}
                 animationDuration={1500}
               />
@@ -289,7 +289,7 @@ export const ValidationStatistics = ({ organizationId }: ValidationStatisticsPro
                 type="monotone" 
                 dataKey="total" 
                 name="Total Validations" 
-                stroke="#6366f1" 
+                stroke="#f97316" 
                 strokeWidth={3}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
